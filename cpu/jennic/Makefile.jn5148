@@ -1,0 +1,58 @@
+CONTIKI_CPU_DIRS     = . dev net sys
+CONTIKI_SOURCEFILES += clock.c timer-arch.c uart.c jts.c rand.c assert.c i2c.c irq.c sprintf.c watchdog.c init.c
+
+### Compiler definitions
+CCPREFIX = ba-elf
+CC       = $(CCPREFIX)-gcc
+LD       = $(CCPREFIX)-gcc
+AS       = $(CCPREFIX)-as
+AR       = $(CCPREFIX)-ar
+OBJCOPY  = $(CCPREFIX)-objcopy
+STRIP    = $(CCPREFIX)-strip
+
+ifeq ($(DEBUG),true)
+CONTIKI_SOURCEFILES += gdb2.c
+CFLAGS += -g -DGDB
+endif
+
+ifdef JENSDK_PATH
+LDFLAGS += -L$(JENSDK_PATH)/Chip/JN5148/Build/
+LDFLAGS += -L$(JENSDK_PATH)/Chip/JN5148/Library/
+LDFLAGS += -L$(JENSDK_PATH)/Components/Library/
+CFLAGS += -I$(JENSDK_PATH)/Components/Common/Include/
+CFLAGS += -I$(JENSDK_PATH)/Components/AppApi/Include/
+CFLAGS += -I$(JENSDK_PATH)/Components/HardwareApi/Include/
+endif
+TARGET_LIBFILES += -lHwPatch_JN5148 -lMacPatch_JN5148 -lSWDebug_JN5148
+#TARGET_LIBFILES += ${addprefix $(CONTIKI_CPU)/sys/, BeaconTxNotification_JN5139R1.a}
+
+CFLAGS += -Wall -Os -fomit-frame-pointer
+CFLAGS += -fdata-sections -ffunction-sections
+CFLAGS += -march=ba2
+CFLAGS += -DJN514x=5140 -DJENNIC_CHIP_FAMILY=JN514x
+
+CFLAGS += -msibcall -mno-entri -mno-multi -mno-setcc -mno-cmov
+CFLAGS += -mno-carry -mno-subb -mno-sext -mno-ror
+CFLAGS += -mno-hard-div -mhard-mul -mbranch-cost=3
+CFLAGS += -msimple-mul -mredzone-size=4
+CFLAGS += -ffixed-r16 -ffixed-r17 -ffixed-r18 -ffixed-r19
+CFLAGS += -ffixed-r20 -ffixed-r21 -ffixed-r22 -ffixed-r23
+CFLAGS += -ffixed-r24 -ffixed-r25 -ffixed-r26 -ffixed-r27
+CFLAGS += -ffixed-r28 -ffixed-r29 -ffixed-r30 -ffixed-r31
+
+LDFLAGS += -TAppBuild_JN5148.ld -nostartfiles -mba2_elf -march=ba2 -Wl,-Map=contiki-$(TARGET).map
+
+### Compilation rules
+
+# .PHONY: symbols.c symbols.h
+ifdef CORE
+symbols.c symbols.h:
+	$(NM) $(CORE) | awk -f ../../tools/mknmlist > symbols.c
+#	@${CONTIKI}/tools/make-symbols $(CORE)
+else
+symbols.c symbols.h:
+	@${CONTIKI}/tools/make-empty-symbols
+endif
+
+%.$(TARGET).hex: %.$(TARGET)
+	$(OBJCOPY) $^ -O binary $@

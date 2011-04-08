@@ -69,6 +69,8 @@
 #include "net/neighbor-info.h"
 #include "net/netstack.h"
 
+void (*sicslowpan_tcpip_input)() = tcpip_input;
+
 #define DEBUG 0
 #if DEBUG
 /* PRINTFI and PRINTFO are defined for input and output to debug one without changing the timing of the other */
@@ -1289,8 +1291,8 @@ send_packet(rimeaddr_t *dest)
  *  packet/fragments are put in packetbuf and delivered to the 802.15.4
  *  MAC.
  */
-static uint8_t
-output(uip_lladdr_t *localdest)
+uint8_t
+sicslowpan_output(uip_lladdr_t *localdest)
 {
   /* The MAC address of the destination of the packet */
   rimeaddr_t dest;
@@ -1530,9 +1532,15 @@ input(void)
   }
 
   if(processed_ip_len > 0) {
-    /* reassembly is ongoing */
-    /*    printf("frag %d %d\n", reass_tag, frag_tag);*/
-    if((frag_size > 0 &&
+    if(frag_size > 0 &&
+       ((GET16(RIME_FRAG_PTR, RIME_FRAG_DISPATCH_SIZE) & 0xf800) >> 8)==
+        SICSLOWPAN_DISPATCH_FRAG1 && reass_tag != frag_tag &&
+       rimeaddr_cmp(&frag_sender, packetbuf_addr(PACKETBUF_ADDR_SENDER))) {
+      /* the packet we received is a FRAG1 and we did not yet receive a FRAGN
+       * from the last reassembly for the same sender, so start a new one */
+      processed_ip_len = sicslowpan_len = 0;
+      goto reassembly;
+    } else if((frag_size > 0 &&
         (frag_size != sicslowpan_len ||
          reass_tag  != frag_tag ||
          !rimeaddr_cmp(&frag_sender, packetbuf_addr(PACKETBUF_ADDR_SENDER))))  ||
@@ -1549,7 +1557,8 @@ input(void)
      * reassembly is off
      * start it if we received a fragment
      */
-    if(frag_size > 0) {
+reassembly:
+    if(frag_size > 0){
       sicslowpan_len = frag_size;
       reass_tag = frag_tag;
       timer_set(&reass_timer, SICSLOWPAN_REASS_MAXAGE*CLOCK_SECOND);
@@ -1659,7 +1668,7 @@ input(void)
     neighbor_info_packet_received();
 #endif /* SICSLOWPAN_CONF_NEIGHBOR_INFO */
 
-    tcpip_input();
+    sicslowpan_tcpip_input();
 #if SICSLOWPAN_CONF_FRAG
   }
 #endif /* SICSLOWPAN_CONF_FRAG */
@@ -1679,7 +1688,7 @@ sicslowpan_init(void)
    * Set out output function as the function to be called from uIP to
    * send a packet.
    */
-  tcpip_set_outputfunc(output);
+  tcpip_set_outputfunc(sicslowpan_output);
 
 #if SICSLOWPAN_COMPRESSION == SICSLOWPAN_COMPRESSION_HC06
 /* Preinitialize any address contexts for better header compression

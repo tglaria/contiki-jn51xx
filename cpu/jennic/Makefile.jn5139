@@ -1,0 +1,57 @@
+CONTIKI_CPU_DIRS     = . dev net sys
+CONTIKI_SOURCEFILES += clock.c timer-arch.c uart.c jts.c assert.c i2c.c irq.c sprintf.c watchdog.c init.c
+
+### Compiler definitions
+CCPREFIX = ba-elf
+CC       = $(CCPREFIX)-gcc
+LD       = $(CCPREFIX)-gcc
+AS       = $(CCPREFIX)-as
+AR       = $(CCPREFIX)-ar
+OBJCOPY  = $(CCPREFIX)-objcopy
+STRIP    = $(CCPREFIX)-strip
+
+ifeq ($(DEBUG),true)
+CONTIKI_SOURCEFILES += gdb2.c
+CFLAGS += -DGDB -g
+endif
+
+ifdef JENSDK_PATH
+LDFLAGS += -L$(JENSDK_PATH)/Chip/JN513xR1/Build/
+TARGET_LIBFILES += $(JENSDK_PATH)/Chip/JN513xR1/Library/ChipLib.a
+TARGET_LIBFILES += $(JENSDK_PATH)/Common/Library/libc.a
+CFLAGS += -I$(JENSDK_PATH)/Common/Include/
+CFLAGS += -I$(JENSDK_PATH)/Chip/JN513xR1/Include/
+else
+TARGET_LIBFILES += -lChipLib -lc
+endif
+
+TARGET_LIBFILES += ${addprefix $(CONTIKI_CPU)/sys/, BeaconTxNotification_JN5139R1.a}
+
+CFLAGS  += -Wall -Os -Wcast-align #-fpack-struct
+CFLAGS  += -march=ba1 -mabi=1
+CFLAGS  += -DCHIP_RELEASE_5131
+CFLAGS  += -DOR1K -Wall
+CFLAGS  += -mno-entri -mno-multi -mno-setcc -mno-cmov
+CFLAGS  += -mno-carry -mno-subb -mno-sext -mno-ror
+CFLAGS  += -mno-ff1 -mno-hard-div -mhard-mul -mbranch-cost=3
+CFLAGS  += -msimple-mul -mredzone-size=4
+LDFLAGS += -TAppBuild_JN5139R1.ld -nostdlib -Wl,-Map=contiki-$(TARGET).map
+
+### Compilation rules
+
+# .PHONY: symbols.c symbols.h
+ifdef CORE
+symbols.c symbols.h:
+	$(NM) $(CORE) | awk -f ../../tools/mknmlist > symbols.c
+#	@${CONTIKI}/tools/make-symbols $(CORE)
+else
+symbols.c symbols.h:
+	@${CONTIKI}/tools/make-empty-symbols
+endif
+
+%.$(TARGET).hex: %.$(TARGET)
+	$(OBJCOPY) $^ -O binary $@
+
+%.u: %.$(TARGET).hex
+	#sudo jenprog -c ftdi $<
+	jenprog $<

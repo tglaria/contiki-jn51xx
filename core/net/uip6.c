@@ -109,7 +109,6 @@ void uip_log(char *msg);
 #if UIP_STATISTICS == 1
 struct uip_stats uip_stat;
 #endif /* UIP_STATISTICS == 1 */
- 
 
 /*---------------------------------------------------------------------------*/
 /** @{ \name Layer 2 variables */
@@ -359,7 +358,11 @@ upper_layer_chksum(u8_t proto)
   u16_t sum;
   
   upper_layer_len = (((u16_t)(UIP_IP_BUF->len[0]) << 8) + UIP_IP_BUF->len[1] - uip_ext_len) ;
-  
+
+  /* avoid buffer overrun in chksum call below */
+  if (upper_layer_len > sizeof(uip_buf) - (UIP_IPH_LEN + UIP_LLH_LEN + uip_ext_len))
+    upper_layer_len = sizeof(uip_buf) - (UIP_IPH_LEN + UIP_LLH_LEN + uip_ext_len);
+
   /* First sum pseudoheader. */
   /* IP protocol and length fields. This addition cannot carry. */
   sum = upper_layer_len + proto;
@@ -836,7 +839,7 @@ ext_hdr_options_process() {
          *   Problem, Code 2, message to the packet's Source Address,
          *   pointing to the unrecognized Option Type.
          */
-        PRINTF("MSB %x\n", UIP_EXT_HDR_OPT_BUF->type);
+        //PRINTF("MSB %x\n", UIP_EXT_HDR_OPT_BUF->type);
         switch(UIP_EXT_HDR_OPT_BUF->type & 0xC0) {
           case 0:
             break;
@@ -873,7 +876,7 @@ uip_process(u8_t flag)
   }
 #endif /* UIP_UDP */
   uip_sappdata = uip_appdata = &uip_buf[UIP_IPTCPH_LEN + UIP_LLH_LEN];
-   
+
   /* Check if we were invoked because of a poll request for a
      particular connection. */
   if(flag == UIP_POLL_REQUEST) {
@@ -1030,7 +1033,7 @@ uip_process(u8_t flag)
   if((UIP_IP_BUF->vtc & 0xf0) != 0x60)  { /* IP version and header length. */
     UIP_STAT(++uip_stat.ip.drop);
     UIP_STAT(++uip_stat.ip.vhlerr);
-    UIP_LOG("ipv6: invalid version.");
+    //UIP_LOG("ipv6: invalid version.");
     goto drop;
   }
   /*
@@ -1277,7 +1280,7 @@ uip_process(u8_t flag)
   
   icmp6_input:
   /* This is IPv6 ICMPv6 processing code. */
-  PRINTF("icmp6_input: length %d\n", uip_len);
+  //PRINTF("icmp6_input: length %d\n", uip_len);
 
 #if UIP_CONF_IPV6_CHECKS
   /* Compute and check the ICMP header checksum */
@@ -1341,7 +1344,7 @@ uip_process(u8_t flag)
       uip_len = 0;
       break;
     default:
-      PRINTF("Unknown icmp6 message type %d\n", UIP_ICMP_BUF->type);
+      //PRINTF("Unknown icmp6 message type %d\n", UIP_ICMP_BUF->type);
       UIP_STAT(++uip_stat.icmp.drop);
       UIP_STAT(++uip_stat.icmp.typeerr);
       UIP_LOG("icmp6: unknown ICMP message.");
@@ -1419,7 +1422,7 @@ uip_process(u8_t flag)
 
  udp_found:
   PRINTF("In udp_found\n");
- 
+
   uip_conn = NULL;
   uip_flags = UIP_NEWDATA;
   uip_sappdata = uip_appdata = &uip_buf[UIP_LLH_LEN + UIP_IPUDPH_LEN];
@@ -1476,7 +1479,7 @@ uip_process(u8_t flag)
                                        checksum. */
     UIP_STAT(++uip_stat.tcp.drop);
     UIP_STAT(++uip_stat.tcp.chkerr);
-    UIP_LOG("tcp: bad checksum.");
+    //UIP_LOG("tcp: bad checksum.");
     goto drop;
   }
 
@@ -1684,7 +1687,7 @@ uip_process(u8_t flag)
 
   /* This label will be jumped to if we found an active connection. */
  found:
-  PRINTF("In found\n");
+  UIP_LOG("tcp: found\n");
   uip_conn = uip_connr;
   uip_flags = 0;
   /* We do a very naive form of TCP reset processing; we just accept
@@ -1744,7 +1747,7 @@ uip_process(u8_t flag)
       uip_connr->snd_nxt[1] = uip_acc32[1];
       uip_connr->snd_nxt[2] = uip_acc32[2];
       uip_connr->snd_nxt[3] = uip_acc32[3];
-   
+
       /* Do RTT estimation, unless we have done retransmissions. */
       if(uip_connr->nrtx == 0) {
         signed char m;
@@ -1768,7 +1771,6 @@ uip_process(u8_t flag)
       /* Reset length of outstanding data. */
       uip_connr->len = 0;
     }
-    
   }
 
   /* Do different things depending on in what state the connection is. */
@@ -1962,7 +1964,7 @@ uip_process(u8_t flag)
         UIP_APPCALL();
 
       appsend:
-      
+        //UIP_LOG("tcp: appsend\n");
         if(uip_flags & UIP_ABORT) {
           uip_slen = 0;
           uip_connr->tcpstateflags = UIP_CLOSED;
@@ -2028,9 +2030,7 @@ uip_process(u8_t flag)
         /* If there is no data to send, just send out a pure ACK if
            there is newdata. */
         if(uip_flags & UIP_NEWDATA) {
-          uip_len = UIP_TCPIP_HLEN;
-          UIP_TCP_BUF->flags = TCP_ACK;
-          goto tcp_send_noopts;
+          goto tcp_send_ack;
         }
       }
       goto drop;
@@ -2104,6 +2104,7 @@ uip_process(u8_t flag)
   /* We jump here when we are ready to send the packet, and just want
      to set the appropriate TCP sequence numbers in the TCP header. */
  tcp_send_ack:
+  UIP_LOG("tcp: ack\n");
   UIP_TCP_BUF->flags = TCP_ACK;
 
  tcp_send_nodata:
@@ -2117,8 +2118,8 @@ uip_process(u8_t flag)
      headers before calculating the checksum and finally send the
      packet. */
  tcp_send:
-  PRINTF("In tcp_send\n");
-   
+  UIP_LOG("tcp: send\n");
+
   UIP_TCP_BUF->ackno[0] = uip_connr->rcv_nxt[0];
   UIP_TCP_BUF->ackno[1] = uip_connr->rcv_nxt[1];
   UIP_TCP_BUF->ackno[2] = uip_connr->rcv_nxt[2];
@@ -2172,8 +2173,8 @@ uip_process(u8_t flag)
   UIP_IP_BUF->tcflow = 0x00;
   UIP_IP_BUF->flow = 0x00;
  send:
-  PRINTF("Sending packet with length %d (%d)\n", uip_len,
-         (UIP_IP_BUF->len[0] << 8) | UIP_IP_BUF->len[1]);
+//  PRINTF("Sending packet with length %d (%d)\n", uip_len,
+//         (UIP_IP_BUF->len[0] << 8) | UIP_IP_BUF->len[1]);
   
   UIP_STAT(++uip_stat.ip.sent);
   /* Return and let the caller do the actual transmission. */

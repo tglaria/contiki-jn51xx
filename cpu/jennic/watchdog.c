@@ -28,102 +28,35 @@
  *
  * This file is part of the Contiki operating system.
  *
- * @(#)$Id: leds.c,v 1.7 2009/02/24 21:30:20 adamdunkels Exp $
+ * @(#)$Id: watchdog.c,v 1.1 2010/02/07 07:43:35 adamdunkels Exp $
  */
 
-#include "dev/leds.h"
-#include "sys/clock.h"
-#include "sys/energest.h"
+ /* Dummy watchdog routines for the Raven 1284p */
+#include "dev/watchdog.h"
 
-static unsigned char leds, invert;
 /*---------------------------------------------------------------------------*/
-static void
-show_leds(unsigned char changed)
+void
+watchdog_init(void)
 {
-  if(changed & LEDS_GREEN) {
-    /* Green did change */
-    if((invert ^ leds) & LEDS_GREEN) {
-      ENERGEST_ON(ENERGEST_TYPE_LED_GREEN);
-    } else {
-      ENERGEST_OFF(ENERGEST_TYPE_LED_GREEN);
-    }
-  }
-  if(changed & LEDS_YELLOW) {
-    if((invert ^ leds) & LEDS_YELLOW) {
-      ENERGEST_ON(ENERGEST_TYPE_LED_YELLOW);
-    } else {
-      ENERGEST_OFF(ENERGEST_TYPE_LED_YELLOW);
-    }
-  }
-  if(changed & LEDS_RED) {
-    if((invert ^ leds) & LEDS_RED) {
-      ENERGEST_ON(ENERGEST_TYPE_LED_RED);
-    } else {
-      ENERGEST_OFF(ENERGEST_TYPE_LED_RED);
-    }
-  }
-  leds_arch_set(leds ^ invert);
 }
 /*---------------------------------------------------------------------------*/
 void
-leds_init(void)
+watchdog_start(void)
 {
-  leds_arch_init();
-  leds = invert = 0;
 }
 /*---------------------------------------------------------------------------*/
 void
-leds_blink(void)
+watchdog_periodic(void)
 {
-  /* Blink all leds. */
-  unsigned char inv;
-  inv = ~(leds ^ invert);
-  leds_invert(inv);
-
-  clock_delay(400);
-
-  leds_invert(inv);
-}
-/*---------------------------------------------------------------------------*/
-unsigned char
-leds_get(void) {
-  return leds_arch_get();
 }
 /*---------------------------------------------------------------------------*/
 void
-leds_on(unsigned char ledv)
+watchdog_stop(void)
 {
-  unsigned char changed;
-  changed = (~leds) & ledv;
-  if (ledv & LEDS_ALL)
-    leds = LEDS_ALL;
-  else
-    leds |= ledv;
-  show_leds(changed);
 }
 /*---------------------------------------------------------------------------*/
 void
-leds_off(unsigned char ledv)
+watchdog_reboot(void)
 {
-  unsigned char changed;
-  changed = leds & ledv;
-  if (ledv & LEDS_ALL)
-    leds = 0;
-  else
-    leds &= ~ledv;
-  show_leds(changed);
-}
-/*---------------------------------------------------------------------------*/
-void
-leds_toggle(unsigned char ledv)
-{
-  leds_invert(ledv);
-}
-/*---------------------------------------------------------------------------*/
-/*   invert the invert register using the leds parameter */
-void
-leds_invert(unsigned char ledv) {
-  invert = invert ^ ledv;
-  show_leds(ledv);
 }
 /*---------------------------------------------------------------------------*/

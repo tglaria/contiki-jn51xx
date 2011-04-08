@@ -107,6 +107,14 @@ tapdev_poll(void)
   if(ret == 0) {
     return 0;
   }
+
+//  if (drand48()>.9)
+//  {
+//    read(fd, uip_buf, UIP_BUFSIZE);
+//    printf("dropped\n");
+//    return 0;
+//  }
+
   ret = read(fd, uip_buf, UIP_BUFSIZE);
 
   PRINTF("tapdev6: read %d bytes (max %d)\n", ret, UIP_BUFSIZE);
@@ -176,6 +184,10 @@ do_send(void)
  
   PRINTF("tapdev_send: sending %d bytes\n", uip_len);
   /*  check_checksum(uip_buf, size);*/
+
+//  if (drand48()>.9)
+//    return;
+
 #if DROP
   drop++;
   if(drop % 8 == 7) {

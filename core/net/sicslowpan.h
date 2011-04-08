@@ -322,5 +322,9 @@ struct sicslowpan_nh_compressor {
 extern const struct network_driver sicslowpan_driver;
 
 extern const struct mac_driver *sicslowpan_mac;
+
+extern void (*sicslowpan_tcpip_input)();
+u8_t sicslowpan_output(uip_lladdr_t *);
+
 #endif /* __SICSLOWPAN_H__ */
 /** @} */
