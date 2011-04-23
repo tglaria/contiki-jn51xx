@@ -69,7 +69,10 @@ ieee_findpan(MAC_MlmeDcfmInd_s *ind, MAC_PanDescr_s **pan)
   if(ind->u8Type      != MAC_MLME_DCFM_SCAN ||
      scan->u8ScanType != MAC_MLME_SCAN_TYPE_ACTIVE ||
      scan->u8Status   != MAC_ENUM_SUCCESS)
+  {
+    HAL_BREAKPOINT();
     return scan->u8Status;
+  }
 
   for(i=0; i<scan->u8ResultListSize; i++)
   {
@@ -77,8 +80,11 @@ ieee_findpan(MAC_MlmeDcfmInd_s *ind, MAC_PanDescr_s **pan)
      * it allows joining
      * TODO: handle the case where we are not allowed to join the
      * network.
-     * */
+     */
     *pan = &scan->uList.asPanDescr[i];
+
+    PRINTF("panid: %d\n", (int) ((*pan)->sCoord.u16PanId));
+
     if( (*pan)->sCoord.u16PanId==SICSLOWPAN_PANID &&
        ((*pan)->u16SuperframeSpec&0x8000) )
     {

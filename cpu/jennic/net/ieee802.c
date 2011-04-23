@@ -79,9 +79,9 @@ ieee_register_lqi_callback(void (*func)(const rimeaddr_t*, uint8_t))
   lqicb = func;
 }
 
-static bool     ieee_started = false;
-static mac_callback_t mac_cb = NULL;
-static void*      mac_cb_ptr = NULL;
+static bool ieee_started      = false;
+static mac_callback_t mac_cb  = NULL;
+static void*      mac_cb_ptr  = NULL;
 
 /* contiki mac driver functions */
 void /* put packet into transmit buffer */
@@ -238,9 +238,10 @@ req_reset(bool setDefaultPib)
 // scan duration is (2**n+1) * 960 symbols
 // according to JN-RM-2002-802.15.4-Stack-API-1v7.pdf
 #define MAX_SCAN_DURATION 14
+#define SCAN_ALL_CHANNELS 0x07FFF800UL
 
 static void
-req_scan(uint8_t scantype, uint8_t duration, uint32_t chans)
+req_scan(uint8_t scantype, uint8_t duration)
 {
   MAC_MlmeReqRsp_s  mlmereq;
   MAC_MlmeSyncCfm_s mlmecfm;
@@ -248,7 +249,7 @@ req_scan(uint8_t scantype, uint8_t duration, uint32_t chans)
   mlmereq.u8Type = MAC_MLME_REQ_SCAN;
   mlmereq.u8ParamLength = sizeof(MAC_MlmeReqScan_s);
   mlmereq.uParam.sReqScan.u8ScanType      = scantype;
-  mlmereq.uParam.sReqScan.u32ScanChannels = chans;
+  mlmereq.uParam.sReqScan.u32ScanChannels = SCAN_ALL_CHANNELS;
   mlmereq.uParam.sReqScan.u8ScanDuration  = duration % MAX_SCAN_DURATION;
 
   vAppApiMlmeRequest(&mlmereq, &mlmecfm);
@@ -379,7 +380,7 @@ PROCESS_THREAD(ieee_process, ev, data)
     PT_INIT(&ieee_mcps); ieee_mcpshandler = ieee_mcpspt;
 
     /* start the mlme thread by requesting a scan. */
-    req_scan(MAC_MLME_SCAN_TYPE_ACTIVE,0,SCAN_ALL_CHANNELS);
+    req_scan(MAC_MLME_SCAN_TYPE_ACTIVE,0);
   } else {
     struct ieee_callbacks *cb = (struct ieee_callbacks*) data;
 

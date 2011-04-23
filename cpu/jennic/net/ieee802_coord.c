@@ -85,7 +85,8 @@ req_start(uint8_t chan, bool coord)
 }
 
 static uint8_t
-ieee_findsilentchan(MAC_MlmeDcfmInd_s *ind)
+ieee_findsilentchan(MAC_MlmeDcfmInd_s *ind, uint32_t channelmask)
+  /* never inline this function, compiler bug */
 {
   MAC_MlmeCfmScan_s *scan = &ind->uParam.sDcfmScan;
   uint8_t i, minchan=0;
@@ -95,17 +96,18 @@ ieee_findsilentchan(MAC_MlmeDcfmInd_s *ind)
      scan->u8Status   != MAC_ENUM_SUCCESS)
     return 0;
 
-  /* find quietest channel */
+  /* find quietest unmasked channel */
   for(i=0; i<scan->u8ResultListSize; i++)
   {
-    if(scan->uList.au8EnergyDetect[i] < scan->uList.au8EnergyDetect[minchan])
+    if(scan->uList.au8EnergyDetect[i] < scan->uList.au8EnergyDetect[minchan]
+       && (channelmask & (1<<i)))
       minchan=i;
   }
 
   return minchan+11;
 }
 
-#define SCAN_DURATION 5
+#define SCAN_DURATION 4
 
 PT_THREAD(ieee_mlmept(MAC_MlmeDcfmInd_s *ev))
   /* mac management thread */
@@ -121,7 +123,7 @@ PT_THREAD(ieee_mlmept(MAC_MlmeDcfmInd_s *ev))
     uint8_t i=0;
 
     PUTS("ieee_task: requesting active scan\n");
-    req_scan(MAC_MLME_SCAN_TYPE_ACTIVE, SCAN_DURATION, channels);
+    req_scan(MAC_MLME_SCAN_TYPE_ACTIVE, SCAN_DURATION);
 
     PT_YIELD(&ieee_mlme);
 
@@ -144,15 +146,15 @@ PT_THREAD(ieee_mlmept(MAC_MlmeDcfmInd_s *ev))
   do /* energy scan on all unallocated channels */
   {
     PUTS("ieee_task: requesting energy scan\n");
-    req_scan(MAC_MLME_SCAN_TYPE_ENERGY_DETECT, SCAN_DURATION, channels);
+    req_scan(MAC_MLME_SCAN_TYPE_ENERGY_DETECT, SCAN_DURATION);
     PT_YIELD(&ieee_mlme);
   } while(ev->u8Type != MAC_MLME_DCFM_SCAN ||
           asscan(ev).u8Status != MAC_ENUM_SUCCESS ||
           asscan(ev).u8ScanType != MAC_MLME_SCAN_TYPE_ENERGY_DETECT);
 
   PUTS("ieee_task: got energy scan result\n");
-  req_start(ieee_findsilentchan(ev), true);
-  PRINTF("ieee_task: started as coord on silent channel %d\n", ieee_findsilentchan(ev));
+  req_start(ieee_findsilentchan(ev, channels), true);
+  //PRINTF("ieee_task: started as coord on silent channel %d\n", ieee_findsilentchan(ev));
 #else
   req_start(RADIO_CHANNEL, true);
   PRINTF("ieee_task: started as coord on fixed channel %d\n", RADIO_CHANNEL);
@@ -160,6 +162,7 @@ PT_THREAD(ieee_mlmept(MAC_MlmeDcfmInd_s *ev))
 
   /* we are started now */
   process_post(PROCESS_BROADCAST, ieee_event, IEEE_STARTED);
+  PUTS("ieee_task: start broadcast\n");
 
   while(1)
   {

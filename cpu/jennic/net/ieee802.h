@@ -67,8 +67,6 @@
 #  define RADIO_CHANNEL JENNIC_CONF_COORD_FIXED_CHANNEL
 # endif
 
-#define SCAN_ALL_CHANNELS    0x07FFF800UL
-
 PROCESS_NAME(ieee_process);
 const struct mac_driver ieee_driver;
 
