@@ -156,7 +156,6 @@ int snprintf(char *str, size_t n, char *fmt, ...)
 
 int printf(char *fmt, ...)
 {
-#ifdef GDB
   int m;
   char str[256];
   va_list va;
@@ -166,9 +165,6 @@ int printf(char *fmt, ...)
   str[m+1] = '\0';
   GDB2_PUTS(str);
   return m;
-#else
-  return 0;
-#endif
 }
 
 int puts(char *s)

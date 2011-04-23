@@ -41,6 +41,8 @@
 #include "sys/timer.h"
 #include "leds.h"
 
+#define GDB2_PUTS(x)
+
 /* define the connections for the usb chip */
 #ifndef JENNIC_CONF_USB_IRQPIN
 # error JENNIC_CONF_USB_IRQPIN missing
@@ -528,8 +530,8 @@ PROCESS_THREAD(usb_process, ev, data)
       PROCESS_YIELD_UNTIL(ev==PROCESS_EVENT_POLL);
     }
 
-    if (usb.USBIRQ.URESIRQ) GDB2_PUTS("usb: reset\n");
-    if (usb.USBIRQ.NOVBUSIRQ) GDB2_PUTS("usb: no vbus\n");
+    if (usb.USBIRQ.URESIRQ)   { GDB2_PUTS("usb: reset\n");   }
+    if (usb.USBIRQ.NOVBUSIRQ) { GDB2_PUTS("usb: no vbus\n"); }
     process_post(usbdev.process, usb_event, (void*) EVENT_USB_DISCONNECTED);
   }
 
