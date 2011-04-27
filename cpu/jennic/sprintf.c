@@ -28,7 +28,7 @@ modified by Philipp Scholl <scholl@teco.edu>
 #include "gdb2.h"
 
 
-static char*  bf, buf[12], uc, zs;
+static char*  bf, buf[14], uc, zs;
 static unsigned int num;
 
 static void out(char c) {
@@ -42,7 +42,7 @@ static void outDgt(char dgt) {
 
 static void divOut(unsigned int div) {
   unsigned char dgt=0;
-  num &= 0xffff; // just for testing the code  with 32 bit ints
+  //num &= 0xffff; // just for testing the code  with 32 bit ints
   while (num>=div) {
     num -= div;
     dgt++;
@@ -85,6 +85,11 @@ int vsnprintf(char *str, size_t n, char *fmt, va_list va)
             num = -(int)num;
             out('-');
           }
+          divOut(1000000000);
+          divOut(100000000);
+          divOut(10000000);
+          divOut(1000000);
+          divOut(100000);
           divOut(10000);
           divOut(1000);
           divOut(100);
@@ -95,6 +100,11 @@ int vsnprintf(char *str, size_t n, char *fmt, va_list va)
         case 'X':
           uc= ch=='X';
           num=va_arg(va, unsigned int);
+          divOut(0x100000000);
+          divOut(0x10000000);
+          divOut(0x1000000);
+          divOut(0x100000);
+          divOut(0x10000);
           divOut(0x1000);
           divOut(0x100);
           divOut(0x10);
