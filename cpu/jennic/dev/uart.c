@@ -74,7 +74,7 @@ vAHI_UartSetBaudrate(uint32_t handle, uint32_t u32BaudRate)
     *pu8Reg   = u8TempLcr & 0x7F;
 }
 
-bool
+void
 uart_init(uint32_t uart, uint32_t baudrate, uint8_t databits,
           uint8_t  parity, uint8_t stopbits, uint8_t flowcontrol)
   /* primes uart for transmission.

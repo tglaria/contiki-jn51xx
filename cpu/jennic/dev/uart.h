@@ -8,7 +8,7 @@
 # define E_AHI_UART_NO_FLOWCTRL     0
 # define E_AHI_UART_RTSCTS_FLOWCTRL 1
 
-bool
+void
 uart_init(uint32_t uart, uint32_t baudrate, uint8_t databits,
           uint8_t  parity, uint8_t stopbits, uint8_t flowcontrol);
 
