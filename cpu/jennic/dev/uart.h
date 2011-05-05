@@ -3,10 +3,17 @@
 # include <stdint.h>
 # include <stddef.h>
 # include <stdbool.h>
+# include <contiki.h>
 
 # define E_AHI_UART_NO_PARITY       2
 # define E_AHI_UART_NO_FLOWCTRL     0
 # define E_AHI_UART_RTSCTS_FLOWCTRL 1
+
+# ifndef JENNIC_CONF_UART_SIZE
+#  define UART_SIZE 512
+# else
+#  define UART_SIZE JENNIC_CONF_UART_SIZE
+# endif
 
 void
 uart_init(uint32_t uart, uint32_t baudrate, uint8_t databits,
