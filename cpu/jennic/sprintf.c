@@ -25,8 +25,9 @@ modified by Philipp Scholl <scholl@teco.edu>
 #include <stdarg.h>
 #include <ctype.h>
 #include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
 #include "gdb2.h"
-
 
 static char*  bf, buf[14], uc, zs;
 static unsigned int num;
@@ -50,7 +51,7 @@ static void divOut(unsigned int div) {
   if (zs || dgt>0) outDgt(dgt);
 }
 
-int vsnprintf(char *str, size_t n, char *fmt, va_list va)
+int vsnprintf(char *str, size_t n, const char *fmt, __VALIST va)
 {
   char ch, *p, *str_orig = str;
 
@@ -100,7 +101,7 @@ int vsnprintf(char *str, size_t n, char *fmt, va_list va)
         case 'X':
           uc= ch=='X';
           num=va_arg(va, unsigned int);
-          divOut(0x100000000);
+          //divOut(0x100000000UL);
           divOut(0x10000000);
           divOut(0x1000000);
           divOut(0x100000);
@@ -144,31 +145,31 @@ abort:
   return str - str_orig;
 }
 
-int sprintf(char *str, char *fmt, ...)
+int sprintf(char *str, const char *fmt, ...)
 {
   int m;
-  va_list va;
+  __VALIST va;
   va_start(va,fmt);
   m = vsnprintf(str, 0xffffffff, fmt, va);
   va_end(va);
   return m;
 }
 
-int snprintf(char *str, size_t n, char *fmt, ...)
+int snprintf(char *str, size_t n, const char *fmt, ...)
 {
   int m;
-  va_list va;
+  __VALIST va;
   va_start(va,fmt);
   m = vsnprintf(str, n, fmt, va);
   va_end(va);
   return m;
 }
 
-int printf(char *fmt, ...)
+int printf(const char *fmt, ...)
 {
   int m;
   char str[256];
-  va_list va;
+  __VALIST va;
   va_start(va,fmt);
   m = vsnprintf(str, sizeof(str)-1, fmt, va);
   va_end(va);
@@ -177,12 +178,13 @@ int printf(char *fmt, ...)
   return m;
 }
 
-int puts(char *s)
+int puts(const char *s)
 {
   GDB2_PUTS(s);
   return strlen(s);
 }
 
+#undef putchar
 int putchar(int c)
 {
   GDB2_PUTS(c);
