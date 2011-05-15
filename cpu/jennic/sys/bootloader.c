@@ -297,8 +297,8 @@ appcall(void *p)
    * is too fast when writing to the flash has started, therefore limiting
    * the overall throughput of the bootloader protocol. */
   time = clock_time() - time;
-  if (time < CLOCK_SECOND/15)
-    clock_delay(CLOCK_SECOND/15 - time);
+  if (time < CLOCK_SECOND/12)
+    clock_delay(CLOCK_SECOND/12 - time);
 }
 
 PROCESS_THREAD(jennic_bootloader_process, ev, data)
