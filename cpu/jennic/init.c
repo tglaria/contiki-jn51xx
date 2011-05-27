@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010
+ * Copyright (c) 2010, 2011
  * Telecooperation Office (TecO), Universitaet Karlsruhe (TH), Germany.
  * All rights reserved.
  *
@@ -41,13 +41,64 @@
 #include "jts.h"
 #include "gdb2.h"
 
-#define BUS_ERROR           *((volatile uint32 *)(0x4000008))
-#define UNALIGNED_ACCESS    *((volatile uint32 *)(0x4000018))
-#define ILLEGAL_INSTRUCTION *((volatile uint32 *)(0x400001C))
+#if defined(__BA1__)
+# define BUS_ERROR           *((volatile uint32 *)(0x4000008))
+# define UNALIGNED_ACCESS    *((volatile uint32 *)(0x4000018))
+# define ILLEGAL_INSTRUCTION *((volatile uint32 *)(0x400001C))
+# define UNALIGNED_ACCESS_HANDLER 0x00012D70
 
-#define UNALIGNED_ACCESS_HANDLER 0x00012D70
+#elif defined(__BA2__)
+# define BUS_ERROR           *((volatile uint32 *)(0x4000000))
+# define UNALIGNED_ACCESS    *((volatile uint32 *)(0x4000008))
+# define ILLEGAL_INSTRUCTION *((volatile uint32 *)(0x400000A))
 
-void init_hardware()
+# define TICK_TIMER          *((volatile uint32 *)(0x4000004))
+# define SYS_CALL            *((volatile uint32 *)(0x4000014))
+# define SYS_TRAP            *((volatile uint32 *)(0x4000018))
+# define SYS_GENERIC         *((volatile uint32 *)(0x400001C))
+# define STACK_OVERFLOW      *((volatile uint32 *)(0x4000020))
+
+#else
+# error "unkown arch"
+#endif
+
+#ifdef __BA2__
+void
+unaligned_access()
+{
+        /* Enable and reset required UART */
+        vAHI_UartEnable(E_AHI_UART_0);
+        vAHI_UartReset(E_AHI_UART_0, TRUE, TRUE);
+        vAHI_UartReset(E_AHI_UART_0, FALSE, FALSE);
+
+        vAHI_UartSetClockDivisor(E_AHI_UART_0, E_AHI_UART_RATE_115200);
+
+        vAHI_UartSetControl(E_AHI_UART_0,
+                            E_AHI_UART_EVEN_PARITY,
+                            E_AHI_UART_PARITY_DISABLE,
+                            E_AHI_UART_WORD_LEN_8,
+                            E_AHI_UART_1_STOP_BIT,
+                            E_AHI_UART_RTS_LOW);
+
+        vAHI_UartSetInterrupt(E_AHI_UART_0,
+                              FALSE,
+                              FALSE,
+                              FALSE,
+                              FALSE,
+                              E_AHI_UART_FIFO_LEVEL_1);
+
+        while ((u8AHI_UartReadLineStatus(E_AHI_UART_0) & E_AHI_UART_LS_THRE ) == 0);
+        vAHI_UartWriteData(E_AHI_UART_0, 'c');
+
+        while(1);
+    vAHI_SwReset();
+}
+
+# define UNALIGNED_ACCESS_HANDLER unaligned_access
+#endif
+
+void
+init_hardware()
 {
   u32AHI_Init();
 
@@ -69,5 +120,3 @@ void init_hardware()
   //BUS_ERROR =           (uint32_t) reset;
   //ILLEGAL_INSTRUCTION = (uint32_t) reset;
 }
-
-

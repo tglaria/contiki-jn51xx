@@ -39,7 +39,7 @@
 #include "AppHardwareApi.h"
 
 typedef enum {
-  IRQ_DIO0 =              0x00000001,
+  IRQ_DIO0 =              0x00000001, /* same as E_AHI_DIO*_INT defs ... */
   IRQ_DIO1 =              0x00000002,
   IRQ_DIO2 =              0x00000004,
   IRQ_DIO3 =              0x00000008,
@@ -61,7 +61,7 @@ typedef enum {
   IRQ_DIO19 =             0x00080000,
   IRQ_DIO20 =             0x00100000,
 
-  IRQ_ADC1  =             0x00200000,
+  IRQ_ADC1  =             0x00200000, /* ... until here */
   IRQ_ADC2  =             0x00400000,
   IRQ_ADC3  =             0x00800000,
   IRQ_ADC4  =             0x01000000,

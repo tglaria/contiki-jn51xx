@@ -37,6 +37,8 @@
 #include "dev/i2c.h"
 #include "dev/acc-sensor.h"
 #include "dev/hrclock.h"
+#include "dev/irq.h"
+#include <contiki-net.h>
 #include <AppHardwareApi.h>
 #include <gdb.h>
 
@@ -74,44 +76,116 @@
 #define ADXL345_FIFO_CTL 0x38
 #define ADXL345_FIFO_STATUS 0x39
 
+#ifndef JENNIC_CONF_ADXL345_INT0_PIN
+# define INT0_PIN E_AHI_DIO16_INT
+#else
+# define INT0_PIN JENNIC_CONF_ADXL345_INT0_PIN
+#endif
+
+static bool
+wreg(uint8_t r, uint8_t v, uint8_t mask)
+{
+  uint8_t buf[2] = {r};
+
+  /* preserve last register value */
+  if (!i2c(ADXL345_ADDR, &r, 1, buf+1, 1,
+        I2C_END_OF_TRANS|I2C_REPEATED_START))
+    return false;
+
+  buf[1] &= mask;
+  buf[1] |= v;
+
+  return i2c(ADXL345_ADDR, buf, sizeof(buf), NULL, 0, I2C_END_OF_TRANS);
+}
+
 static int
 value(int type)
 {
-  uint8_t rb[] = {0,0};
+  uint8_t r, buf[2], v;
 
   switch(type) {
   case ACC_VALUE_X:
-    rb[0] = ADXL345_DATAX0;
-    i2c(ADXL345_ADDR, rb, 1, rb, sizeof(rb), I2C_REPEATED_START|I2C_END_OF_TRANS);
-    return (int) *rb;
+    r = ADXL345_DATAX0;
+    i2c(ADXL345_ADDR, &r, 1, buf, sizeof(buf), I2C_REPEATED_START|I2C_END_OF_TRANS);
+    return (int16_t) ((buf[1]<<8)|buf[0]);
 
   case ACC_VALUE_Y:
-    rb[0] = ADXL345_DATAY0;
-    i2c(ADXL345_ADDR, rb, 1, rb, sizeof(rb), I2C_REPEATED_START|I2C_END_OF_TRANS);
-    return (int) *rb;
+    r = ADXL345_DATAY0;
+    i2c(ADXL345_ADDR, &r, 1, buf, sizeof(buf), I2C_REPEATED_START|I2C_END_OF_TRANS);
+    return (int16_t) ((buf[1]<<8)|buf[0]);
 
   case ACC_VALUE_Z:
-    rb[0] = ADXL345_DATAZ0;
-    i2c(ADXL345_ADDR, rb, 1, rb, sizeof(rb), I2C_REPEATED_START|I2C_END_OF_TRANS);
-    return (int) *rb;
+    r = ADXL345_DATAZ0;
+    i2c(ADXL345_ADDR, &r, 1, buf, sizeof(buf), I2C_REPEATED_START|I2C_END_OF_TRANS);
+    return (int16_t) ((buf[1]<<8)|buf[0]);
+
+  case ACC_VALUE_INTSOURCE:
+    r = ADXL345_INT_SOURCE;
+    i2c(ADXL345_ADDR, &r, 1, buf, 1, I2C_REPEATED_START|I2C_END_OF_TRANS);
+    return buf[0];
+
+  case ACC_VALUE_TAPSTATUS:
+    r = ADXL345_ACT_TAP_STATUS;
+    i2c(ADXL345_ADDR, &r, 1, buf, 1, I2C_REPEATED_START|I2C_END_OF_TRANS);
+    return buf[0];
+
   }
 
   return 0;
 }
 
+static void
+irq(irq_t i)
+{
+  sensors_changed(&acc_sensor);
+}
+
+static const struct irq_handle irqh = {NULL, irq, INT0_PIN};
+
 static int
 configure(int type, int v)
 {
-  uint8_t poweron[] = {ADXL345_POWER_CTL, 0};
-
-  if (v) poweron[1] = 1<<3;  /* bit 3 enables measurement */
-  else   poweron[1] = 0;
+  bool r = true;
 
   switch (type) {
   case SENSORS_HW_INIT:
   case SENSORS_ACTIVE:
     i2c_init();
-    return i2c(ADXL345_ADDR, poweron, sizeof(poweron), NULL, 0, I2C_END_OF_TRANS);
+    return wreg(ADXL345_POWER_CTL, v?(1<<3):0, (1<<3));
+
+  case ACC_SENSOR_RATE:
+    return wreg(ADXL345_BW_RATE, v&0x0f, 0x0f);
+
+  case ACC_SENSOR_FULLRES:
+    return wreg(ADXL345_DATA_FORMAT, v?(1<<3):0x00, ~(1<<3));
+
+  case ACC_SENSOR_RANGE:
+    return wreg(ADXL345_DATA_FORMAT, v?0x03:0, ~0x03);
+
+  case ACC_SENSOR_TAPENABLE:
+    vAHI_DioSetDirection(INT0_PIN, 0x00);
+    vAHI_DioInterruptEdge(INT0_PIN, 0x00);
+    vAHI_DioInterruptEnable(INT0_PIN, 0x00);
+
+    if (v) irq_add(&irqh);
+    else   irq_remove(&irqh);
+
+    r &= wreg(ADXL345_TAP_AXES, 0x07, 0x0f); /* all tap axes, no suppression */
+    r &= wreg(ADXL345_INT_MAP, 0, ~((1<<6)|1<<5)); /* map to int0 */
+    r &= wreg(ADXL345_INT_ENABLE, v?((1<<6)|(1<<5)):0, ~((1<<6)|1<<5));
+    return r;
+
+  case ACC_SENSOR_TAPTHRESH:
+    return wreg(ADXL345_THRESH_TAP, v&0xff, 0xff);
+
+  case ACC_SENSOR_TAPDUR:
+    return wreg(ADXL345_DUR, v&0xff, 0xff);
+
+  case ACC_SENSOR_TAPLATENT:
+    return wreg(ADXL345_LATENT, v&0xff, 0xff);
+
+  case ACC_SENSOR_TAPWINDOW:
+    return wreg(ADXL345_WINDOW, v&0xff, 0xff);
   }
 
   return 0;
@@ -124,7 +198,7 @@ status(int type)
 
   switch(type) {
   case SENSORS_ACTIVE:
-    i2c(ADXL345_POWER_CTL, buf, sizeof(buf), buf, sizeof(buf), I2C_REPEATED_START|I2C_END_OF_TRANS);
+    i2c(ADXL345_ADDR, buf, sizeof(buf), buf, sizeof(buf), I2C_REPEATED_START|I2C_END_OF_TRANS);
     return buf[0] & (1<<3);
   case SENSORS_READY:
     return 1;

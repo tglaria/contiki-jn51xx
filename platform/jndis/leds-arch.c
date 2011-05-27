@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009
+ * Copyright (c) 2008
  * Telecooperation Office (TecO), Universitaet Karlsruhe (TH), Germany.
  * All rights reserved.
  *
@@ -32,29 +32,25 @@
  * Author(s): Philipp Scholl <scholl@teco.edu>
  */
 
-#ifndef __ACC_SENSOR_H__
-#define __ACC_SENSOR_H__
+#include "dev/leds.h"
+#include <AppHardwareApi.h>
+#include "contiki-conf.h"
 
-#include "lib/sensors.h"
+/*---------------------------------------------------------------------------*/
+void
+leds_arch_init(void)
+{
+}
 
-extern const struct sensors_sensor acc_sensor;
+/*---------------------------------------------------------------------------*/
+unsigned char
+leds_arch_get(void)
+{
+  return 0;
+}
+/*---------------------------------------------------------------------------*/
+void
+leds_arch_set(unsigned char c)
+{
+}
 
-#define ACC_SENSOR "acceleration"
-
-#define ACC_VALUE_X 0x0
-#define ACC_VALUE_Y 0x1
-#define ACC_VALUE_Z 0x2
-
-#define ACC_SENSOR_RATE      0x00 /* sampling rate       */
-#define ACC_SENSOR_FULLRES   0x01 /* full resolution bit */
-#define ACC_SENSOR_RANGE     0x02 /* range setting       */
-#define ACC_SENSOR_TAPENABLE 0x03
-#define ACC_SENSOR_TAPTHRESH 0x04
-#define ACC_SENSOR_TAPDUR    0x05
-#define ACC_SENSOR_TAPLATENT 0x06
-#define ACC_SENSOR_TAPWINDOW 0x07
-
-#define ACC_VALUE_INTSOURCE  0x08
-#define ACC_VALUE_TAPSTATUS  0x09
-
-#endif

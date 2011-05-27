@@ -329,6 +329,7 @@ uart_read(uint32_t dev, char *buf, size_t n)
   if (n==0) return 0;
 
   disable_rxirq(dev);
+  set_rts(dev, true);
 
   for (i=0; i<n && !q_empty(q); i++, buf++)
     *buf = q_dequeue(q);
