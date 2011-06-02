@@ -83,7 +83,7 @@ ieee_findpan(MAC_MlmeDcfmInd_s *ind, MAC_PanDescr_s **pan)
      */
     *pan = &scan->uList.asPanDescr[i];
 
-    PRINTF("panid: %d\n", (int) ((*pan)->sCoord.u16PanId));
+    PRINTF("panid: 0x%x\n", (int) ((*pan)->sCoord.u16PanId));
 
     if( (*pan)->sCoord.u16PanId==SICSLOWPAN_PANID &&
        ((*pan)->u16SuperframeSpec&0x8000) )
@@ -147,11 +147,11 @@ PT_THREAD(ieee_mlmept(MAC_MlmeDcfmInd_s *ev))
         break;
       case MAC_MLME_IND_BEACON_NOTIFY:
         //PUTS("ieee_task: beacon notify\n");
-        if(!associated)
-        {
-          req_associate(&asbeacon(ev).sPANdescriptor);
-          PUTS("ieee_task: trying to associate\n");
-        }
+        //if(!associated)
+        //{
+        //  req_associate(&asbeacon(ev).sPANdescriptor);
+        //  PUTS("ieee_task: trying to associate\n");
+        //}
         if(beaconrxcb!=NULL)
         {
           beaconrxcb(&asbeacon(ev));

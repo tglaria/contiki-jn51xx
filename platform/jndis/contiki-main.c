@@ -5,9 +5,10 @@
 #include "jts.h"
 #include "net/ieee802.h"
 #include "dev/acc-sensor.h"
+#include "dev/tpa-sensor.h"
 
 PROCINIT(&etimer_process, &sensors_process, &tcpip_process, &jennic_bootloader_process);
-SENSORS(&acc_sensor);
+SENSORS(&acc_sensor, &tpa_sensor);
 
 void
 init_net(void)
