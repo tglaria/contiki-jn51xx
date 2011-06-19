@@ -108,11 +108,9 @@ PT_THREAD(ieee_mlmept(MAC_MlmeDcfmInd_s *ev))
 
   do
   {
-    static uint8_t duration = 0;
-
     PUTS("ieee_task: requesting active scan\n");
 
-    req_scan(MAC_MLME_SCAN_TYPE_ACTIVE, duration++);
+    req_scan(MAC_MLME_SCAN_TYPE_ACTIVE, 4);
     PT_YIELD_UNTIL( &ieee_mlme, ev->u8Type==MAC_MLME_DCFM_SCAN &&
                     (asscan(ev).u8Status==MAC_ENUM_NO_BEACON ||
                     (asscan(ev).u8Status==MAC_ENUM_SUCCESS &&

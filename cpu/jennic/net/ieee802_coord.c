@@ -86,7 +86,6 @@ req_start(uint8_t chan, bool coord)
 
 static uint8_t
 ieee_findsilentchan(MAC_MlmeDcfmInd_s *ind, uint32_t channelmask)
-  /* never inline this function, compiler bug */
 {
   MAC_MlmeCfmScan_s *scan = &ind->uParam.sDcfmScan;
   uint8_t i, minchan=0;
@@ -96,7 +95,7 @@ ieee_findsilentchan(MAC_MlmeDcfmInd_s *ind, uint32_t channelmask)
      scan->u8Status   != MAC_ENUM_SUCCESS)
     return 0;
 
-  /* find quietest unmasked channel */
+  /* find most silent unmasked channel */
   for(i=0; i<scan->u8ResultListSize; i++)
   {
     if(scan->uList.au8EnergyDetect[i] < scan->uList.au8EnergyDetect[minchan]
