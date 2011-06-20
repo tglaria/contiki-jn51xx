@@ -235,13 +235,12 @@ req_reset(bool setDefaultPib)
   return mlmecfm.u8Status!=MAC_MLME_CFM_OK;
 }
 
-// scan duration is (2**n+1) * 960 symbols
-// according to JN-RM-2002-802.15.4-Stack-API-1v7.pdf
-#define MAX_SCAN_DURATION 14
-#define SCAN_ALL_CHANNELS 0x07FFF800UL
+#define SCAN_ALL_CHANNELS 0x03FFF800UL
 
 static void
 req_scan(uint8_t scantype, uint8_t duration)
+  /* scan duration is (2**n+1) * 960 symbols, maximum is 14
+   * according to JN-RM-2002-802.15.4-Stack-API-1v7.pdf */
 {
   MAC_MlmeReqRsp_s  mlmereq;
   MAC_MlmeSyncCfm_s mlmecfm;
@@ -250,7 +249,7 @@ req_scan(uint8_t scantype, uint8_t duration)
   mlmereq.u8ParamLength = sizeof(MAC_MlmeReqScan_s);
   mlmereq.uParam.sReqScan.u8ScanType      = scantype;
   mlmereq.uParam.sReqScan.u32ScanChannels = SCAN_ALL_CHANNELS;
-  mlmereq.uParam.sReqScan.u8ScanDuration  = duration % MAX_SCAN_DURATION;
+  mlmereq.uParam.sReqScan.u8ScanDuration  = duration % 14;
 
   vAppApiMlmeRequest(&mlmereq, &mlmecfm);
 }
@@ -297,6 +296,8 @@ ieee_mcpspt(MAC_McpsDcfmInd_s *ev)
       }
 
       /* update lqi stuff */
+      packetbuf_set_attr(PACKETBUF_ATTR_RSSI, asdataframe(ev).u8LinkQuality);
+
       if (asdataframe(ev).sSrcAddr.u8AddrMode == LONG && lqicb)
         lqicb(asrimeaddr(&asdataframe(ev).sSrcAddr.uAddr.sExt, &rime),
               asdataframe(ev).u8LinkQuality);
@@ -359,7 +360,12 @@ ieee_init()
 
   /* allocate an event for this process */
   ieee_event = process_alloc_event();
-  pib->bAutoRequest = false;
+  pib->bAutoRequest = true;
+
+  /* power and bandwidth control */
+  //bAHI_PhyRadioSetPower(0);
+  //vAHI_BbcSetHigherDataRate(E_AHI_BBC_CTRL_DATA_RATE_250_KBPS);
+  //vAHI_BbcSetInterFrameGap(160);
 
   process_start(&ieee_process, NULL);
 }
