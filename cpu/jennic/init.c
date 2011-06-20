@@ -361,7 +361,8 @@ init_hardware()
 #endif
 
 #ifdef __BA2__
-  vAHI_WatchdogStop();
+  if (bAHI_BrownOutEventResetStatus()) { PRINTF("reset due to brownout\n"); }
+  if (bAHI_WatchdogResetEvent())  { PRINTF("reset due to watchdog\n"); }
   //misalign_test();
 #endif
 

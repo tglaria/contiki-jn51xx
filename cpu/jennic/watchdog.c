@@ -27,12 +27,10 @@
  * SUCH DAMAGE.
  *
  * This file is part of the Contiki operating system.
- *
- * @(#)$Id: watchdog.c,v 1.1 2010/02/07 07:43:35 adamdunkels Exp $
  */
 
- /* Dummy watchdog routines for the Raven 1284p */
 #include "dev/watchdog.h"
+#include "AppHardwareApi.h"
 
 /*---------------------------------------------------------------------------*/
 void
@@ -43,16 +41,25 @@ watchdog_init(void)
 void
 watchdog_start(void)
 {
+#ifdef __BA2__
+  vAHI_WatchdogStart(8); /* about 1s timeout */
+#endif
 }
 /*---------------------------------------------------------------------------*/
 void
 watchdog_periodic(void)
 {
+#ifdef __BA2__
+  vAHI_WatchdogRestart();
+#endif
 }
 /*---------------------------------------------------------------------------*/
 void
 watchdog_stop(void)
 {
+#ifdef __BA2__
+  vAHI_WatchdogStop();
+#endif
 }
 /*---------------------------------------------------------------------------*/
 void

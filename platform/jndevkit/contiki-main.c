@@ -4,8 +4,10 @@
 #include "gdb2.h"
 #include "jts.h"
 #include "net/ieee802.h"
+#include "dev/lightlevel-sensor.h"
 
 PROCINIT(&etimer_process, &tcpip_process, &jennic_bootloader_process);
+SENSORS(&lightlevel_sensor);
 
 void
 init_net(void)
@@ -15,6 +17,15 @@ init_net(void)
 
   /* load the mac address */
   memcpy(uip_lladdr.addr, pvAppApiGetMacAddrLocation(), sizeof(uip_lladdr.addr));
+
+  /* TODO: move this stuff into ieee_process? */
+
+  {
+    int i;
+    for (i=0; i<sizeof(uip_lladdr.addr); i++)
+      printf("%x,", uip_lladdr.addr[i]);
+    printf("\n");
+  }
 
 #if UIP_CONF_ROUTER
   uip_ds6_prefix_add(&ipaddr, UIP_DEFAULT_PREFIX_LEN, 0, 0, 0, 0);
@@ -40,11 +51,15 @@ void AppColdStart(void)
   autostart_start(autostart_processes);
   jts_init();
 
+  /* enable watchdog on JN5148, there is none on JN5139 */
+  watchdog_start();
+
   /* default main loop */
   while(1)
   {
     process_run();
     etimer_request_poll();
+    watchdog_periodic();
   }
 }
 
