@@ -35,7 +35,7 @@
 #include "gdb2.h"
 
 #ifdef __BA1__
-/* only for ba1 == JN5139, functions are provided on JN5148 */
+/* only for ba1 == JN5139 */
 
 void gdb_putc(char c);
 char lnibble_to_hex(char i);
@@ -67,5 +67,4 @@ gdb2_console_output(int len, char *buf)
 
   return;
 }
-
 #endif

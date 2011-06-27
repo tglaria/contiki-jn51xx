@@ -34,7 +34,7 @@
 
 #ifndef __GDB2_H__
 #define __GDB2_H__
-#include "uart.h"
+# include "uart.h"
 
 #ifdef GDB
  #ifdef __BA1__
@@ -46,12 +46,13 @@
    #define HAL_BREAKPOINT()       asm volatile ("l.trap %0 " : :"I"(1))
  #endif
 
- #ifdef __BA2__
-   void gdb_console_output(int len, char *buf);
-
-   #define GDB2_STARTUP(uart,div) gdb_startup(uart, div)
-   #define GDB2_PUTS(buf)         gdb_console_output(strlen(buf), buf)
-   #define HAL_BREAKPOINT()       asm volatile ("b.trap %0 " : :"I"(1))
+ #ifdef __BA2__ /* only printf debugging */
+   #define GDB2_STARTUP(uart,div) uart_init(uart, 38400, E_AHI_UART_WORD_LEN_8,\
+                                            E_AHI_UART_NO_PARITY,\
+                                            E_AHI_UART_1_STOP_BIT,\
+                                            E_AHI_UART_NO_FLOWCTRL)
+   #define GDB2_PUTS(buf)         uart_write(E_AHI_UART_0, buf, strlen(buf))
+   #define HAL_BREAKPOINT()
  #endif
 #else
  #define GDB2_STARTUP(uart,div)
