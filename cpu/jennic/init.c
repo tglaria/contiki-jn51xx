@@ -137,7 +137,7 @@ unaligned_access()
 {
 #ifdef GDB
 # define ENTRI_REGS       7 /* the number of regs stored by the prologue, find'em with objdump! */
-# define ENTRI_EXTRASTACK 0 /* number of extra space on the stack */
+# define ENTRI_EXTRASTACK 2 /* number of extra space on the stack */
 #else
 # define ENTRI_REGS       6 /* the number of regs stored by the prologue, find'em with objdump! */
 # define ENTRI_EXTRASTACK 0 /* number of extra space on the stack */
@@ -202,7 +202,7 @@ unaligned_access()
 
     if (*(EPC+2)&(1<<7) || *(EPC+2)&(1<<6)) /* load with sign/zeros */
     {
-      PRINTF("word load from 0x%x into r%d EPC=0x%x\n", EEA,
+      PRINTF("word load from 0x%x=0x%x%x%x%x into r%d EPC=0x%x\n", EEA, (int) *(eea), (int) *(eea+1), (int) *(eea+2), (int) *(eea+3),
           ((*EPC&0x03) + (*(EPC+1)>>5)), mfspr(EPC_REGISTER));
 
       *reg     = *eea;
@@ -342,15 +342,17 @@ misalign_test()
 # define UNALIGNED_ACCESS_HANDLER unaligned_access
 #endif
 
-
 void
 init_hardware()
 {
   u32AHI_Init();
 
   UNALIGNED_ACCESS    = UNALIGNED_ACCESS_HANDLER;
+
+#ifdef __BA2__
   BUS_ERROR           = bus_error;
   ILLEGAL_INSTRUCTION = illegal_instr;
+#endif __BA2__
 
 #ifdef GDB
   GDB2_STARTUP(E_AHI_UART_0, E_AHI_UART_RATE_38400);
@@ -364,6 +366,10 @@ init_hardware()
   if (bAHI_BrownOutEventResetStatus()) { PRINTF("reset due to brownout\n"); }
   if (bAHI_WatchdogResetEvent())  { PRINTF("reset due to watchdog\n"); }
   //misalign_test();
+
+  /* just make sure its disabled (its on by default), reenable somewhere else
+   * if needed. */
+  watchdog_stop();
 #endif
 
   leds_init();

@@ -34,13 +34,16 @@
 
 #include "jts.h"
 #include "hrclock.h"
-#include "BeaconTxNotification.h"
 #include "ieee802.h"
 #include "ieee_mac_pib.h"
 #include "AppApi.h"
 #include "gdb2.h"
 #include "string.h"
 #include <AppHardwareApi.h>
+
+#if __BA1__
+# include "BeaconTxNotification.h"
+#endif
 
 #define FREE_RUNNING_SYMBOL_CLOCK *((volatile uint32 *)(0x10000400UL+0x0024UL))
 #define SYMBOL_CLOCK_FREQ (1000*1000/16) // = 625 kHz

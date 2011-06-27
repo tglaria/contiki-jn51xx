@@ -131,6 +131,21 @@ ieee_send(mac_callback_t cb, void *ptr)
   req.uParam.sReqData.sFrame.sSrcAddr.uAddr.sExt.u32L =
     ((MAC_ExtAddr_s*) pvAppApiGetMacAddrLocation())->u32H;
 
+//  printf("mac addr: 0x%x%x 0x%x lladdr: 0x%x%x%x%x%x%x%x%x 0x%x%x\n",
+//                                    *((uint32_t*) pvAppApiGetMacAddrLocation()),
+//                                    *((uint32_t*) pvAppApiGetMacAddrLocation()+1),
+//                                    pvAppApiGetMacAddrLocation(),
+//                                    (int) uip_lladdr.addr[0],
+//                                    (int) uip_lladdr.addr[1],
+//                                    (int) uip_lladdr.addr[2],
+//                                    (int) uip_lladdr.addr[3],
+//                                    (int) uip_lladdr.addr[4],
+//                                    (int) uip_lladdr.addr[5],
+//                                    (int) uip_lladdr.addr[6],
+//                                    (int) uip_lladdr.addr[7],
+//                                    *((uint32_t*) uip_lladdr.addr),
+//                                    *((uint32_t*) uip_lladdr.addr+1));
+
   /* copy over payload */
   req.uParam.sReqData.sFrame.u8SduLength = packetbuf_datalen();
   memcpy( req.uParam.sReqData.sFrame.au8Sdu, packetbuf_dataptr(),
@@ -362,10 +377,12 @@ ieee_init()
   ieee_event = process_alloc_event();
   pib->bAutoRequest = true;
 
-  /* power and bandwidth control */
-  //bAHI_PhyRadioSetPower(0);
-  //vAHI_BbcSetHigherDataRate(E_AHI_BBC_CTRL_DATA_RATE_250_KBPS);
-  //vAHI_BbcSetInterFrameGap(160);
+  /* bandwidth control, smaller interframe gap and higher data rate,
+   * this is not standard conform! */
+#if defined(__BA2__) && defined(JENNIC_CONF_JN5148_FASTDATARATE)
+  vAHI_BbcSetHigherDataRate(E_AHI_BBC_CTRL_DATA_RATE_1_MBPS);
+  vAHI_BbcSetInterFrameGap(48);
+#endif
 
   process_start(&ieee_process, NULL);
 }
@@ -378,6 +395,7 @@ PROCESS_THREAD(ieee_process, ev, data)
 
   PROCESS_BEGIN();
   PUTS("ieee_process: starting\n");
+  printf("0x%x\n", pvAppApiGetMacAddrLocation());
 
   ieee_init();
 

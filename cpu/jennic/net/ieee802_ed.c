@@ -66,11 +66,16 @@ ieee_findpan(MAC_MlmeDcfmInd_s *ind, MAC_PanDescr_s **pan)
 
   *pan = NULL;
 
+  //printf("u8Type: %d, u8ParamLength: %d, u16PanId: %d\n", ind->u8Type, ind->u8ParamLength,
+  //    ind->u16Pad);
+  //printf("u8Status: %d, u8ScanType: %d, u8ResultListSize: %d, u8Pad: %d, u32UnscannedChannels: %d\n",
+  //       scan->u8Status, scan->u8ScanType, scan->u8ResultListSize, scan->u8Pad, scan->u32UnscannedChannels);
+
   if(ind->u8Type      != MAC_MLME_DCFM_SCAN ||
      scan->u8ScanType != MAC_MLME_SCAN_TYPE_ACTIVE ||
      scan->u8Status   != MAC_ENUM_SUCCESS)
   {
-    HAL_BREAKPOINT();
+    PRINTF("scan unsuccesful status:%d\n", (int) scan->u8Status);
     return scan->u8Status;
   }
 
@@ -79,8 +84,7 @@ ieee_findpan(MAC_MlmeDcfmInd_s *ind, MAC_PanDescr_s **pan)
     /* check if there is a network with the same PANID and if
      * it allows joining
      * TODO: handle the case where we are not allowed to join the
-     * network.
-     */
+     * network.  */
     *pan = &scan->uList.asPanDescr[i];
 
     PRINTF("panid: 0x%x\n", (int) ((*pan)->sCoord.u16PanId));
@@ -144,7 +148,7 @@ PT_THREAD(ieee_mlmept(MAC_MlmeDcfmInd_s *ev))
         associated = false;
         break;
       case MAC_MLME_IND_BEACON_NOTIFY:
-        //PUTS("ieee_task: beacon notify\n");
+        PUTS("ieee_task: beacon notify\n");
         //if(!associated)
         //{
         //  req_associate(&asbeacon(ev).sPANdescriptor);

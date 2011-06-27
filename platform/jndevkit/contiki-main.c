@@ -13,19 +13,16 @@ void
 init_net(void)
 {
   uip_ipaddr_t ipaddr;
-  uip_ip6addr(&ipaddr, 0xaaaa, 0, 0, 0, 0, 0, 0, 0);
+  uip_ip6addr(&ipaddr, 0xfe80, 0, 0, 0, 0, 0, 0, 0);
 
-  /* load the mac address */
+  /* load mac address, hard coded for JN5148 because stack is not yet
+   * initialized here and it has to be to use pvAppApiGetMacAddrLocation()
+   * there. */
+#ifdef __BA2__
+  memcpy(uip_lladdr.addr, (void*) 0x4000d00, sizeof(uip_lladdr.addr));
+#else
   memcpy(uip_lladdr.addr, pvAppApiGetMacAddrLocation(), sizeof(uip_lladdr.addr));
-
-  /* TODO: move this stuff into ieee_process? */
-
-  {
-    int i;
-    for (i=0; i<sizeof(uip_lladdr.addr); i++)
-      printf("%x,", uip_lladdr.addr[i]);
-    printf("\n");
-  }
+#endif
 
 #if UIP_CONF_ROUTER
   uip_ds6_prefix_add(&ipaddr, UIP_DEFAULT_PREFIX_LEN, 0, 0, 0, 0);
@@ -33,10 +30,26 @@ init_net(void)
   uip_ds6_prefix_add(&ipaddr, UIP_DEFAULT_PREFIX_LEN, 0);
 #endif /* UIP_CONF_ROUTER */
   uip_ds6_set_addr_iid(&ipaddr, &uip_lladdr);
-  uip_ds6_addr_add(&ipaddr, 0, ADDR_AUTOCONF);
+  uip_ds6_addr_add(&ipaddr, 0, ADDR_TENTATIVE);
+
+  printf("Tentative link-local IPv6 address ");
+  {
+    int i, a;
+    for(a = 0; a < UIP_DS6_ADDR_NB; a++) {
+      if (uip_ds6_if.addr_list[a].isused) {
+        for(i = 0; i < 7; ++i) {
+          printf("%02x%02x:",
+                 uip_ds6_if.addr_list[a].ipaddr.u8[i * 2],
+                 uip_ds6_if.addr_list[a].ipaddr.u8[i * 2 + 1]);
+        }
+        printf("%02x%02x\n",
+               uip_ds6_if.addr_list[a].ipaddr.u8[14],
+               uip_ds6_if.addr_list[a].ipaddr.u8[15]);
+      }
+    }
+  }
 
   netstack_init();
-
 }
 
 void AppColdStart(void)
@@ -52,14 +65,19 @@ void AppColdStart(void)
   jts_init();
 
   /* enable watchdog on JN5148, there is none on JN5139 */
+#ifdef __BA2__
   watchdog_start();
+#endif
 
   /* default main loop */
   while(1)
   {
     process_run();
     etimer_request_poll();
+
+#ifdef __BA2__
     watchdog_periodic();
+#endif
   }
 }
 
