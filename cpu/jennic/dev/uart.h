@@ -4,6 +4,7 @@
 # include <stddef.h>
 # include <stdbool.h>
 # include <contiki.h>
+# include <AppHardwareApi.h>
 
 # define E_AHI_UART_NO_PARITY       2
 # define E_AHI_UART_NO_FLOWCTRL     0
