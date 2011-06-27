@@ -17,15 +17,19 @@ endif
 
 ifdef JENSDK_PATH
 LDFLAGS += -L$(JENSDK_PATH)/Chip/JN513xR1/Build/
+LDFLAGS += -Lcpu/jennic/jn5139
 TARGET_LIBFILES += $(JENSDK_PATH)/Chip/JN513xR1/Library/ChipLib.a
 TARGET_LIBFILES += $(JENSDK_PATH)/Common/Library/libc.a
 CFLAGS += -I$(JENSDK_PATH)/Common/Include/
 CFLAGS += -I$(JENSDK_PATH)/Chip/JN513xR1/Include/
+CFLAGS += -Icpu/jennic/jn5139
 else
 TARGET_LIBFILES += -lChipLib -lc
+CFLAGS += -I$(CONTIKI_CPU)/jn5139
+LDFLAGS += -L$(CONTIKI_CPU)/jn5139
 endif
 
-TARGET_LIBFILES += ${addprefix $(CONTIKI_CPU)/sys/, BeaconTxNotification_JN5139R1.a}
+TARGET_LIBFILES += $(CONTIKI_CPU)/jn5139/BeaconTxNotification_JN5139R1.a
 
 CFLAGS  += -Wall -Os -Wcast-align #-fpack-struct
 CFLAGS  += -march=ba1 -mabi=1
