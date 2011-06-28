@@ -347,8 +347,6 @@ init_hardware()
 {
   u32AHI_Init();
 
-  UNALIGNED_ACCESS    = UNALIGNED_ACCESS_HANDLER;
-
 #ifdef __BA2__
   BUS_ERROR           = bus_error;
   ILLEGAL_INSTRUCTION = illegal_instr;
@@ -356,11 +354,15 @@ init_hardware()
 
 #ifdef GDB
   GDB2_STARTUP(E_AHI_UART_0, E_AHI_UART_RATE_38400);
-  vAHI_UartSetBaudrate(E_AHI_UART_0, 115200);
 # ifdef __BA1__
+  vAHI_UartSetBaudrate(E_AHI_UART_0, 38400);
   HAL_BREAKPOINT();
+# else
+  vAHI_UartSetBaudrate(E_AHI_UART_0, 115200);
 # endif
 #endif
+
+  UNALIGNED_ACCESS    = UNALIGNED_ACCESS_HANDLER;
 
 #ifdef __BA2__
   if (bAHI_BrownOutEventResetStatus()) { PRINTF("reset due to brownout\n"); }
