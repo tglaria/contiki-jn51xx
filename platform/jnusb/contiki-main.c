@@ -28,15 +28,19 @@ AppColdStart(void)
   autostart_start(autostart_processes);
 
   /* enable watchdog on JN5148, there is none on JN5139 */
+#ifdef __BA2__
   watchdog_start();
-
+#endif
 
   /* default main loop */
   while(1)
   {
     process_run();
     etimer_request_poll();
+
+#ifdef __BA2__
     watchdog_periodic();
+#endif
   }
 }
 
