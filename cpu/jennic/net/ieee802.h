@@ -84,4 +84,7 @@ void ieee_register_lqi_callback(void (*func)(const rimeaddr_t*, uint8_t));
 process_event_t ieee_event;
 enum ieee_events { IEEE_STARTED, IEEE_STOPPED, IEEE_PAUSE, IEEE_UNPAUSE };
 
+/* get the location of the mac address */
+void *ieee_get_mac();
+
 #endif

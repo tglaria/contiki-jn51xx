@@ -67,8 +67,7 @@ req_start(uint8_t chan, bool coord)
 
   MAC_vPibSetShortAddr(mac, 0x0000);
   pib->bAssociationPermit = true;
-  memcpy(&pib->sCoordExtAddr, pvAppApiGetMacAddrLocation(),
-         sizeof(MAC_ExtAddr_s));
+  memcpy(&pib->sCoordExtAddr, ieee_get_mac(), sizeof(MAC_ExtAddr_s));
 
   mlmereq.u8Type = MAC_MLME_REQ_START;
   mlmereq.u8ParamLength = sizeof(MAC_MlmeReqScan_s);

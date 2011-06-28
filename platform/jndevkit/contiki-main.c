@@ -15,14 +15,8 @@ init_net(void)
   uip_ipaddr_t ipaddr;
   uip_ip6addr(&ipaddr, 0xfe80, 0, 0, 0, 0, 0, 0, 0);
 
-  /* load mac address, hard coded for JN5148 because stack is not yet
-   * initialized here and it has to be to use pvAppApiGetMacAddrLocation()
-   * there. */
-#ifdef __BA2__
-  memcpy(uip_lladdr.addr, (void*) 0x4000d00, sizeof(uip_lladdr.addr));
-#else
-  memcpy(uip_lladdr.addr, pvAppApiGetMacAddrLocation(), sizeof(uip_lladdr.addr));
-#endif
+  /* load mac address */
+  memcpy(uip_lladdr.addr, ieee_get_mac(), sizeof(uip_lladdr.addr));
 
 #if UIP_CONF_ROUTER
   uip_ds6_prefix_add(&ipaddr, UIP_DEFAULT_PREFIX_LEN, 0, 0, 0, 0);

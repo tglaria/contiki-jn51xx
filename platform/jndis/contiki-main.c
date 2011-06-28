@@ -17,7 +17,7 @@ init_net(void)
   uip_ip6addr(&ipaddr, 0xaaaa, 0, 0, 0, 0, 0, 0, 0);
 
   /* load the mac address */
-  memcpy(uip_lladdr.addr, pvAppApiGetMacAddrLocation(), sizeof(uip_lladdr.addr));
+  memcpy(uip_lladdr.addr, ieee_get_mac(), sizeof(uip_lladdr.addr));
 
 #if UIP_CONF_ROUTER
   uip_ds6_prefix_add(&ipaddr, UIP_DEFAULT_PREFIX_LEN, 0, 0, 0, 0);

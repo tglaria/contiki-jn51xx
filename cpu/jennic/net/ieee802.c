@@ -127,9 +127,9 @@ ieee_send(mac_callback_t cb, void *ptr)
   req.uParam.sReqData.sFrame.sSrcAddr.u8AddrMode      = LONG;
   req.uParam.sReqData.sFrame.sSrcAddr.u16PanId        = SICSLOWPAN_PANID;
   req.uParam.sReqData.sFrame.sSrcAddr.uAddr.sExt.u32H =
-    ((MAC_ExtAddr_s*) pvAppApiGetMacAddrLocation())->u32L;
+    ((MAC_ExtAddr_s*) ieee_get_mac())->u32L;
   req.uParam.sReqData.sFrame.sSrcAddr.uAddr.sExt.u32L =
-    ((MAC_ExtAddr_s*) pvAppApiGetMacAddrLocation())->u32H;
+    ((MAC_ExtAddr_s*) ieee_get_mac())->u32H;
 
 //  printf("mac addr: 0x%x%x 0x%x lladdr: 0x%x%x%x%x%x%x%x%x 0x%x%x\n",
 //                                    *((uint32_t*) pvAppApiGetMacAddrLocation()),
@@ -387,6 +387,18 @@ ieee_init()
   process_start(&ieee_process, NULL);
 }
 
+void*
+ieee_get_mac()
+{
+#ifdef __BA1__
+  return (void*) 0x4001000;
+#elif defined(__BA2__)
+  return (void*) 0x4000d00;
+#else
+# error "unsupported processor or compiler"
+#endif
+}
+
 
 PROCESS_THREAD(ieee_process, ev, data)
 {
@@ -395,7 +407,6 @@ PROCESS_THREAD(ieee_process, ev, data)
 
   PROCESS_BEGIN();
   PUTS("ieee_process: starting\n");
-  printf("0x%x\n", pvAppApiGetMacAddrLocation());
 
   ieee_init();
 

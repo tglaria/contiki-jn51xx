@@ -10,7 +10,7 @@ void
 init_net(void)
 {
   /* load link-layer address */
-  memcpy(uip_lladdr.addr, pvAppApiGetMacAddrLocation(), sizeof(uip_lladdr.addr));
+  memcpy(uip_lladdr.addr,ieee_get_mac(), sizeof(uip_lladdr.addr));
   netstack_init();
 }
 
