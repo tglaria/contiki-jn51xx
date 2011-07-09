@@ -44,6 +44,7 @@ rsp_associate(MAC_MlmeIndAssociate_s *ind)
   mlmereq.uParam.sRspAssociate.sDeviceAddr.u32H  = ind->sDeviceAddr.u32H;
   mlmereq.uParam.sRspAssociate.sDeviceAddr.u32L  = ind->sDeviceAddr.u32L;
   mlmereq.uParam.sRspAssociate.u8SecurityEnable  = false;
+  mlmereq.uParam.sRspAssociate.u8Status          = 0; /* assocication successful */
   if(ind->u8Capability & MAC_CAPABILITY_ALLOCATE_ADDRESS)
     mlmereq.uParam.sRspAssociate.u16AssocShortAddr = node_addr++;
   else
