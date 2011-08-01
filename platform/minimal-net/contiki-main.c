@@ -163,6 +163,7 @@ sprint_ip6(uip_ip6addr_t addr)
 int
 main(void)
 {
+  clock_init();
 #if UIP_CONF_IPV6
 /* A hard coded address overrides the stack default MAC address to allow multiple instances.
  * uip6.c defines it as {0x00,0x06,0x98,0x00,0x02,0x32} giving an ipv6 address of [fe80::206:98ff:fe00:232]
@@ -173,7 +174,7 @@ main(void)
  *      ::10 becomes fe80::ff:fe00:10 and prefix awaits RA or RPL formation
  *      bbbb:: gives an address of bbbb::206:98ff:fe00:232 if non-RPL
 */
-//#define HARD_CODED_ADDRESS      "bbbb::40"
+//#define HARD_CODED_ADDRESS      "bbbb::20"
 #ifdef HARD_CODED_ADDRESS
 {
   uip_ipaddr_t ipaddr;
@@ -191,11 +192,12 @@ main(void)
 #endif
 
   process_init();
-
-  procinit_init();
-
+/* procinit_init initializes RPL which sets a ctimer for the first DIS */
+/* We must start etimers and ctimers,before calling it */
+  process_start(&etimer_process, NULL);
   ctimer_init();
 
+  procinit_init();
   autostart_start(autostart_processes);
 
 #if RPL_BORDER_ROUTER
@@ -263,6 +265,8 @@ main(void)
 
   /* Make standard output unbuffered. */
   setvbuf(stdout, (char *)NULL, _IONBF, 0);
+
+    printf("\n*******%s online*******\n",CONTIKI_VERSION_STRING);
 
   while(1) {
     fd_set fds;
