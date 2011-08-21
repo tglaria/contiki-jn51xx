@@ -37,6 +37,7 @@
 #include <string.h>
 
 #include "contiki.h"
+#include "contiki-net.h"
 
 #include "net/uip.h"
 #include "net/uip-fw.h"
@@ -64,7 +65,7 @@ u16_t slip_rubbish, slip_twopackets, slip_overflow, slip_ip_drop;
 #define RX_BUFSIZE (UIP_BUFSIZE - UIP_LLH_LEN + 16)
 
 enum {
-  STATE_TWOPACKETS = 0,	/* We have 2 packets and drop incoming data. */
+  STATE_TWOPACKETS = 0, /* We have 2 packets and drop incoming data. */
   STATE_OK = 1,
   STATE_ESC = 2,
   STATE_RUBBISH = 3,
@@ -84,7 +85,7 @@ enum {
 static u8_t state = STATE_TWOPACKETS;
 static u16_t begin, end;
 static u8_t rxbuf[RX_BUFSIZE];
-static u16_t pkt_end;		/* SLIP_END tracker. */
+static u16_t pkt_end;           /* SLIP_END tracker. */
 
 static void (* input_callback)(void) = NULL;
 /*---------------------------------------------------------------------------*/
@@ -107,11 +108,12 @@ slip_send(void)
 
   slip_arch_writeb(SLIP_END);
 
-  ptr = &uip_buf[UIP_LLH_LEN];
+  //ptr = &uip_buf[UIP_LLH_LEN];
+  ptr = uip_buf;
   for(i = 0; i < uip_len; ++i) {
-    if(i == UIP_TCPIP_HLEN) {
-      ptr = (u8_t *)uip_appdata;
-    }
+    //if(i == UIP_TCPIP_HLEN) {
+    //  ptr = (u8_t *)uip_appdata;
+    //}
     c = *ptr++;
     if(c == SLIP_END) {
       slip_arch_writeb(SLIP_ESC);
@@ -169,19 +171,19 @@ slip_poll_handler(u8_t *outbuf, u16_t blen)
     int i;
     if(begin < end && (end - begin) >= 6
        && memcmp(&rxbuf[begin], "CLIENT", 6) == 0) {
-      state = STATE_TWOPACKETS;	/* Interrupts do nothing. */
+      state = STATE_TWOPACKETS; /* Interrupts do nothing. */
       memset(&rxbuf[begin], 0x0, 6);
-      
+
       rxbuf_init();
-      
+
       for(i = 0; i < 13; i++) {
-	slip_arch_writeb("CLIENTSERVER\300"[i]);
+        slip_arch_writeb("CLIENTSERVER\300"[i]);
       }
       return 0;
     }
   }
 #ifdef SLIP_CONF_ANSWER_MAC_REQUEST
-  else if(rxbuf[begin] == '?') { 
+  else if(rxbuf[begin] == '?') {
     /* Used by tapslip6 to request mac for auto configure */
     int i, j;
     char* hexchar = "0123456789abcdef";
@@ -190,16 +192,15 @@ slip_poll_handler(u8_t *outbuf, u16_t blen)
       state = STATE_TWOPACKETS; /* Interrupts do nothing. */
       rxbuf[begin] = 0;
       rxbuf[begin + 1] = 0;
-      
+
       rxbuf_init();
-      
-      rimeaddr_t addr = get_mac_addr();
+
       /* this is just a test so far... just to see if it works */
       slip_arch_writeb('!');
       slip_arch_writeb('M');
       for(j = 0; j < 8; j++) {
-        slip_arch_writeb(hexchar[addr.u8[j] >> 4]);
-        slip_arch_writeb(hexchar[addr.u8[j] & 15]);
+        slip_arch_writeb(hexchar[uip_lladdr.addr[j] >> 4]);
+        slip_arch_writeb(hexchar[uip_lladdr.addr[j] & 15]);
       }
       slip_arch_writeb(SLIP_END);
       return 0;
@@ -217,22 +218,22 @@ slip_poll_handler(u8_t *outbuf, u16_t blen)
     if(begin < pkt_end) {
       len = pkt_end - begin;
       if(len > blen) {
-	len = 0;
+        len = 0;
       } else {
-	memcpy(outbuf, &rxbuf[begin], len);
+        memcpy(outbuf, &rxbuf[begin], len);
       }
     } else {
       len = (RX_BUFSIZE - begin) + (pkt_end - 0);
       if(len > blen) {
-	len = 0;
+        len = 0;
       } else {
-	unsigned i;
-	for(i = begin; i < RX_BUFSIZE; i++) {
-	  *outbuf++ = rxbuf[i];
-	}
-	for(i = 0; i < pkt_end; i++) {
-	  *outbuf++ = rxbuf[i];
-	}
+        unsigned i;
+        for(i = begin; i < RX_BUFSIZE; i++) {
+          *outbuf++ = rxbuf[i];
+        }
+        for(i = 0; i < pkt_end; i++) {
+          *outbuf++ = rxbuf[i];
+        }
       }
     }
 
@@ -240,7 +241,7 @@ slip_poll_handler(u8_t *outbuf, u16_t blen)
     begin = pkt_end;
     if(state == STATE_TWOPACKETS) {
       pkt_end = end;
-      state = STATE_OK;		/* Assume no bytes where lost! */
+      state = STATE_OK;         /* Assume no bytes where lost! */
       
       /* One more packet is buffered, need to be polled again! */
       process_poll(&slip_process);
@@ -264,14 +265,14 @@ PROCESS_THREAD(slip_process, ev, data)
 
     /* Move packet from rxbuf to buffer provided by uIP. */
     uip_len = slip_poll_handler(&uip_buf[UIP_LLH_LEN],
-				UIP_BUFSIZE - UIP_LLH_LEN);
+                                UIP_BUFSIZE - UIP_LLH_LEN);
 #if !UIP_CONF_IPV6
     if(uip_len == 4 && strncmp((char*)&uip_buf[UIP_LLH_LEN], "?IPA", 4) == 0) {
       char buf[8];
       memcpy(&buf[0], "=IPA", 4);
       memcpy(&buf[4], &uip_hostaddr, 4);
       if(input_callback) {
-	input_callback();
+        input_callback();
       }
       slip_write(buf, 8);
     } else if(uip_len > 0
@@ -279,16 +280,16 @@ PROCESS_THREAD(slip_process, ev, data)
        && uip_ipchksum() == 0xffff) {
 #define IP_DF   0x40
       if(BUF->ipid[0] == 0 && BUF->ipid[1] == 0 && BUF->ipoffset[0] & IP_DF) {
-	static u16_t ip_id;
-	u16_t nid = ip_id++;
-	BUF->ipid[0] = nid >> 8;
-	BUF->ipid[1] = nid;
-	nid = uip_htons(nid);
-	nid = ~nid;		/* negate */
-	BUF->ipchksum += nid;	/* add */
-	if(BUF->ipchksum < nid) { /* 1-complement overflow? */
-	  BUF->ipchksum++;
-	}
+        static u16_t ip_id;
+        u16_t nid = ip_id++;
+        BUF->ipid[0] = nid >> 8;
+        BUF->ipid[1] = nid;
+        nid = uip_htons(nid);
+        nid = ~nid;             /* negate */
+        BUF->ipchksum += nid;   /* add */
+        if(BUF->ipchksum < nid) { /* 1-complement overflow? */
+          BUF->ipchksum++;
+        }
       }
 #ifdef SLIP_CONF_TCPIP_INPUT
       SLIP_CONF_TCPIP_INPUT();
@@ -319,13 +320,14 @@ PROCESS_THREAD(slip_process, ev, data)
 int
 slip_input_byte(unsigned char c)
 {
+
   switch(state) {
   case STATE_RUBBISH:
     if(c == SLIP_END) {
       state = STATE_OK;
     }
     return 0;
-    
+
   case STATE_TWOPACKETS:       /* Two packets are already buffered! */
     return 0;
 
@@ -337,7 +339,7 @@ slip_input_byte(unsigned char c)
     } else {
       state = STATE_RUBBISH;
       SLIP_STATISTICS(slip_rubbish++);
-      end = pkt_end;		/* remove rubbish */
+      end = pkt_end;            /* remove rubbish */
       return 0;
     }
     state = STATE_OK;
@@ -348,20 +350,20 @@ slip_input_byte(unsigned char c)
       state = STATE_ESC;
       return 0;
     } else if(c == SLIP_END) {
-	/*
-	 * We have a new packet, possibly of zero length.
-	 *
-	 * There may already be one packet buffered.
-	 */
-      if(end != pkt_end) {	/* Non zero length. */
-	if(begin == pkt_end) {	/* None buffered. */
-	  pkt_end = end;
-	} else {
-	  state = STATE_TWOPACKETS;
-	  SLIP_STATISTICS(slip_twopackets++);
-	}
-	process_poll(&slip_process);
-	return 1;
+        /*
+         * We have a new packet, possibly of zero length.
+         *
+         * There may already be one packet buffered.
+         */
+      if(end != pkt_end) {      /* Non zero length. */
+        if(begin == pkt_end) {  /* None buffered. */
+          pkt_end = end;
+        } else {
+          state = STATE_TWOPACKETS;
+          SLIP_STATISTICS(slip_twopackets++);
+        }
+        process_poll(&slip_process);
+        return 1;
       }
       return 0;
     }
@@ -375,10 +377,10 @@ slip_input_byte(unsigned char c)
     if(next == RX_BUFSIZE) {
       next = 0;
     }
-    if(next == begin) {		/* rxbuf is full */
+    if(next == begin) {         /* rxbuf is full */
       state = STATE_RUBBISH;
       SLIP_STATISTICS(slip_overflow++);
-      end = pkt_end;		/* remove rubbish */
+      end = pkt_end;            /* remove rubbish */
       return 0;
     }
     rxbuf[end] = c;

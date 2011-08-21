@@ -34,7 +34,7 @@
 
 #ifndef __GDB2_H__
 #define __GDB2_H__
-# include "uart.h"
+# include "uart0.h"
 
 #ifdef GDB
  #ifdef __BA1__
@@ -47,11 +47,8 @@
  #endif
 
  #ifdef __BA2__ /* only printf debugging */
-   #define GDB2_STARTUP(uart,div) uart_init(uart, 38400, E_AHI_UART_WORD_LEN_8,\
-                                            E_AHI_UART_NO_PARITY,\
-                                            E_AHI_UART_1_STOP_BIT,\
-                                            E_AHI_UART_NO_FLOWCTRL)
-   #define GDB2_PUTS(buf)         uart_write(E_AHI_UART_0, buf, strlen(buf))
+   #define GDB2_STARTUP(uart,div) uart0_init(38400)
+   #define GDB2_PUTS(buf)         do{while(*buf++){ uart0_writeb(*buf);}} while(0)
    #define HAL_BREAKPOINT()
  #endif
 #else

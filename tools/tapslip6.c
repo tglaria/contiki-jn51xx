@@ -61,8 +61,8 @@ int ssystem(const char *fmt, ...)
      __attribute__((__format__ (__printf__, 1, 2)));
 void write_to_serial(int outfd, void *inbuf, int len);
 
-//#define PROGRESS(s) fprintf(stderr, s)
-#define PROGRESS(s) do { } while (0)
+#define PROGRESS(s) fprintf(stderr, s)
+//#define PROGRESS(s) do { } while (0)
 
 #define USAGE_STRING "usage: tapslip6 [-B baudrate] [-s siodev] [-t tundev] ipaddress netmask"
 
@@ -161,34 +161,37 @@ serial_to_tun(FILE *inslip, int outfd)
   case SLIP_END:
     if(inbufptr > 0) {
       if(uip.inbuf[0] == '!') {
-	if (uip.inbuf[1] == 'M') {
-	  /* Read gateway MAC address and autoconfigure tap0 interface */
-	  char macs[24];
-	  int i, pos;
-	  for(i = 0, pos = 0; i < 16; i++) {
-	    macs[pos++] = uip.inbuf[2 + i];
-	    if ((i & 1) == 1 && i < 14) {
-	      macs[pos++] = ':';
-	    }
-	  }
-	  macs[pos] = '\0';
-	  printf("*** Gateway's MAC address: %s\n", macs);
+        if (uip.inbuf[1] == 'M') {
+          /* Read gateway MAC address and autoconfigure tap0 interface */
+          char macs[6*3+1];
 
-	  ssystem("ifconfig %s down", tundev);
-	  ssystem("ifconfig %s hw ether %s", tundev, &macs[6]);
-	  ssystem("ifconfig %s up", tundev);
-	}
+          /* translation the same as ieee803 to ieee802.15.4 translation, i.e.
+           * 6lowpan mac address translation. */
+          snprintf(macs, sizeof(macs), "%c%c:%c%c:%c%c:%c%c:%c%c:%c%c\0",
+                   uip.inbuf[2+2*0], uip.inbuf[2+2*0+1],
+                   uip.inbuf[2+2*1], uip.inbuf[2+2*1+1],
+                   uip.inbuf[2+2*2], uip.inbuf[2+2*2+1],
+                   uip.inbuf[2+2*3], uip.inbuf[2+2*3+1],
+                   uip.inbuf[2+2*4], uip.inbuf[2+2*4+1],
+                   uip.inbuf[2+2*5], uip.inbuf[2+2*5+1]);
+
+          printf("*** Gateway's ethernet MAC address: %s\n", macs);
+
+          ssystem("ifconfig %s down", tundev);
+          ssystem("ifconfig %s hw ether %s", tundev, macs);
+          ssystem("ifconfig %s up", tundev);
+        }
 #define DEBUG_LINE_MARKER '\r'
       } else if(uip.inbuf[0] == DEBUG_LINE_MARKER) {
-	fwrite(uip.inbuf + 1, inbufptr - 1, 1, stdout);
+        fwrite(uip.inbuf + 1, inbufptr - 1, 1, stdout);
       } else if(is_sensible_string(uip.inbuf, inbufptr)) {
-	fwrite(uip.inbuf, inbufptr, 1, stdout);
+        fwrite(uip.inbuf, inbufptr, 1, stdout);
       } else {
-	printf("Writing to tun  len: %d\n", inbufptr);
-	/*	print_packet(uip.inbuf, inbufptr);*/
-	if(write(outfd, uip.inbuf, inbufptr) != inbufptr) {
-	  err(1, "serial_to_tun: write");
-	}
+        printf("Writing to tun  len: %d\n", inbufptr);
+        print_packet(uip.inbuf, inbufptr);
+        if(write(outfd, uip.inbuf, inbufptr) != inbufptr) {
+          err(1, "serial_to_tun: write");
+        }
       }
       inbufptr = 0;
     }
@@ -251,7 +254,7 @@ slip_flushbuf(int fd)
   if(n == -1 && errno != EAGAIN) {
     err(1, "slip_flushbuf write failed");
   } else if(n == -1) {
-    PROGRESS("Q");		/* Outqueueis full! */
+    PROGRESS("Q");              /* Outqueueis full! */
   } else {
     slip_begin += n;
     if(slip_begin == slip_end) {
@@ -266,13 +269,13 @@ write_to_serial(int outfd, void *inbuf, int len)
   u_int8_t *p = inbuf;
   int i, ecode;
 
-  /*  printf("Got packet of length %d - write SLIP\n", len);*/
-  /*  print_packet(p, len);*/
+  printf("Got packet of length %d - write SLIP\n", len);
+  print_packet(p, len);
 
   /* It would be ``nice'' to send a SLIP_END here but it's not
    * really necessary.
    */
-  /* slip_send(outfd, SLIP_END); */
+  slip_send(outfd, SLIP_END);
   /*  printf("writing packet to serial!!! %d\n", len);*/
   for(i = 0; i < len; i++) {
     switch(p[i]) {
@@ -352,7 +355,7 @@ stty_telos(int fd)
   if(ioctl(fd, TIOCMBIS, &i) == -1) err(1, "ioctl");
 #endif
 
-  usleep(10*1000);		/* Wait for hardware 10ms. */
+  usleep(10*1000);              /* Wait for hardware 10ms. */
 
   /* Flush input and output buffers. */
   if(tcflush(fd, TCIOFLUSH) == -1) err(1, "tcflush");
@@ -418,16 +421,16 @@ cleanup(void)
 #endif
   /* ssystem("arp -d %s", ipaddr); */
   ssystem("netstat -nr"
-	  " | awk '{ if ($2 == \"%s\") print \"route delete -net \"$1; }'"
-	  " | sh",
-	  tundev);
+          " | awk '{ if ($2 == \"%s\") print \"route delete -net \"$1; }'"
+          " | sh",
+          tundev);
 }
 
 void
 sigcleanup(int signo)
 {
   fprintf(stderr, "signal %d\n", signo);
-  exit(0);			/* exit(0) will call cleanup() */
+  exit(0);                      /* exit(0) will call cleanup() */
 }
 
 static int got_sigalarm;
@@ -462,13 +465,13 @@ ifconf(const char *tundev, const char *ipaddr, const char *netmask)
   ssystem("ifconfig %s inet `hostname` up", tundev);
   if(strcmp(ipaddr, "0.0.0.0") != 0) {
     ssystem("route add -net %s netmask %s dev %s",
-	    inet_ntoa(netname), netmask, tundev);
+            inet_ntoa(netname), netmask, tundev);
   }
 #else
   ssystem("ifconfig %s inet `hostname` %s up", tundev, ipaddr);
   if(strcmp(ipaddr, "0.0.0.0") != 0) {
     ssystem("route add -net %s -netmask %s -interface %s",
-	    inet_ntoa(netname), netmask, tundev);
+            inet_ntoa(netname), netmask, tundev);
   }
   ssystem("sysctl -w net.inet.ip.forwarding=1");
 #endif /* !linux */
@@ -497,17 +500,17 @@ main(int argc, char **argv)
 
     case 's':
       if(strncmp("/dev/", optarg, 5) == 0) {
-	siodev = optarg + 5;
+        siodev = optarg + 5;
       } else {
-	siodev = optarg;
+        siodev = optarg;
       }
       break;
 
     case 't':
       if(strncmp("/dev/", optarg, 5) == 0) {
-	strcpy(tundev, optarg + 5);
+        strcpy(tundev, optarg + 5);
       } else {
-	strcpy(tundev, optarg);
+        strcpy(tundev, optarg);
       }
       break;
 
@@ -531,7 +534,7 @@ main(int argc, char **argv)
 
   switch(baudrate) {
   case -2:
-    break;			/* Use default. */
+    break;                      /* Use default. */
   case 9600:
     b_rate = B9600;
     break;
@@ -556,7 +559,7 @@ main(int argc, char **argv)
   if(siodev != NULL) {
       slipfd = devopen(siodev, O_RDWR | O_NONBLOCK);
       if(slipfd == -1) {
-	err(1, "can't open siodev ``/dev/%s''", siodev);
+        err(1, "can't open siodev ``/dev/%s''", siodev);
       }
   } else {
     static const char *siodevs[] = {
@@ -567,7 +570,7 @@ main(int argc, char **argv)
       siodev = siodevs[i];
       slipfd = devopen(siodev, O_RDWR | O_NONBLOCK);
       if (slipfd != -1)
-	break;
+        break;
     }
     if(slipfd == -1) {
       err(1, "can't open siodev");
@@ -615,11 +618,11 @@ main(int argc, char **argv)
       got_sigalarm = 0;
     }
 
-    if(!slip_empty()) {		/* Anything to flush? */
+    if(!slip_empty()) {         /* Anything to flush? */
       FD_SET(slipfd, &wset);
     }
 
-    FD_SET(slipfd, &rset);	/* Read from slip ASAP! */
+    FD_SET(slipfd, &rset);      /* Read from slip ASAP! */
     if(slipfd > maxfd) maxfd = slipfd;
 
     /* We only have one packet at a time queued for slip output. */
@@ -637,14 +640,14 @@ main(int argc, char **argv)
       }
 
       if(FD_ISSET(slipfd, &wset)) {
-	slip_flushbuf(slipfd);
-	sigalarm_reset();
+        slip_flushbuf(slipfd);
+        sigalarm_reset();
       }
 
       if(slip_empty() && FD_ISSET(tunfd, &rset)) {
         tun_to_serial(tunfd, slipfd);
-	slip_flushbuf(slipfd);
-	sigalarm_reset();
+        slip_flushbuf(slipfd);
+        sigalarm_reset();
       }
     }
   }

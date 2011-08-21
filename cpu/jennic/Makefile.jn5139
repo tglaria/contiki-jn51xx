@@ -1,5 +1,5 @@
 CONTIKI_CPU_DIRS     = . dev net sys
-CONTIKI_SOURCEFILES += clock.c timer-arch.c uart.c jts.c assert.c i2c.c irq.c sprintf.c watchdog.c init.c
+CONTIKI_SOURCEFILES += clock.c timer-arch.c uart0.c jts.c assert.c i2c.c irq.c sprintf.c watchdog.c init.c slip.c
 
 ### Compiler definitions
 CCPREFIX = ba-elf
@@ -34,7 +34,7 @@ TARGET_LIBFILES += $(CONTIKI_CPU)/jn5139/BeaconTxNotification_JN5139R1.a
 CFLAGS  += -Wall -Os -Wcast-align #-fpack-struct
 CFLAGS  += -march=ba1 -mabi=1
 CFLAGS  += -DCHIP_RELEASE_5131
-CFLAGS  += -DOR1K -Wall
+CFLAGS  += -DOR1K -Wall -fpack-struct
 CFLAGS  += -mno-entri -mno-multi -mno-setcc -mno-cmov
 CFLAGS  += -mno-carry -mno-subb -mno-sext -mno-ror
 CFLAGS  += -mno-ff1 -mno-hard-div -mhard-mul -mbranch-cost=3
