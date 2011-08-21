@@ -61,8 +61,8 @@ int ssystem(const char *fmt, ...)
      __attribute__((__format__ (__printf__, 1, 2)));
 void write_to_serial(int outfd, void *inbuf, int len);
 
-#define PROGRESS(s) fprintf(stderr, s)
-//#define PROGRESS(s) do { } while (0)
+//#define PROGRESS(s) fprintf(stderr, s)
+#define PROGRESS(s) do { } while (0)
 
 #define USAGE_STRING "usage: tapslip6 [-B baudrate] [-s siodev] [-t tundev] ipaddress netmask"
 
@@ -187,8 +187,8 @@ serial_to_tun(FILE *inslip, int outfd)
       } else if(is_sensible_string(uip.inbuf, inbufptr)) {
         fwrite(uip.inbuf, inbufptr, 1, stdout);
       } else {
-        printf("Writing to tun  len: %d\n", inbufptr);
-        print_packet(uip.inbuf, inbufptr);
+        //printf("Writing to tun  len: %d\n", inbufptr);
+        //print_packet(uip.inbuf, inbufptr);
         if(write(outfd, uip.inbuf, inbufptr) != inbufptr) {
           err(1, "serial_to_tun: write");
         }
@@ -269,8 +269,8 @@ write_to_serial(int outfd, void *inbuf, int len)
   u_int8_t *p = inbuf;
   int i, ecode;
 
-  printf("Got packet of length %d - write SLIP\n", len);
-  print_packet(p, len);
+  //printf("Got packet of length %d - write SLIP\n", len);
+  //print_packet(p, len);
 
   /* It would be ``nice'' to send a SLIP_END here but it's not
    * really necessary.
