@@ -61,8 +61,8 @@ int ssystem(const char *fmt, ...)
      __attribute__((__format__ (__printf__, 1, 2)));
 void write_to_serial(int outfd, void *inbuf, int len);
 
-//#define PROGRESS(s) fprintf(stderr, s)
-#define PROGRESS(s) do { } while (0)
+#define PROGRESS(s) fprintf(stderr, s)
+//#define PROGRESS(s) do { } while (0)
 
 #define USAGE_STRING "usage: tapslip6 [-B baudrate] [-s siodev] [-t tundev] ipaddress netmask"
 
@@ -171,9 +171,9 @@ serial_to_tun(FILE *inslip, int outfd)
                    uip.inbuf[2+2*0], uip.inbuf[2+2*0+1],
                    uip.inbuf[2+2*1], uip.inbuf[2+2*1+1],
                    uip.inbuf[2+2*2], uip.inbuf[2+2*2+1],
-                   uip.inbuf[2+2*3], uip.inbuf[2+2*3+1],
-                   uip.inbuf[2+2*4], uip.inbuf[2+2*4+1],
-                   uip.inbuf[2+2*5], uip.inbuf[2+2*5+1]);
+                   uip.inbuf[2+2*5], uip.inbuf[2+2*5+1],
+                   uip.inbuf[2+2*6], uip.inbuf[2+2*6+1],
+                   uip.inbuf[2+2*7], uip.inbuf[2+2*7+1]);
 
           printf("*** Gateway's ethernet MAC address: %s\n", macs);
 
@@ -189,6 +189,7 @@ serial_to_tun(FILE *inslip, int outfd)
       } else {
         //printf("Writing to tun  len: %d\n", inbufptr);
         //print_packet(uip.inbuf, inbufptr);
+        PROGRESS("r");
         if(write(outfd, uip.inbuf, inbufptr) != inbufptr) {
           err(1, "serial_to_tun: write");
         }
