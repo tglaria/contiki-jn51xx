@@ -12,8 +12,7 @@ TARGET_STARTFILES = ${addprefix $(OBJECTDIR)/,contiki-main.o}
 
 ### Define the CPU directory
 CONTIKI_CPU=$(CONTIKI)/cpu/jennic
-#include $(CONTIKI)/cpu/jennic/Makefile.jn5139
-include $(CONTIKI)/cpu/jennic/Makefile.jn5148
+include $(CONTIKI)/cpu/jennic/Makefile.jn51xx
 
 CFLAGS += -fpack-struct
 
