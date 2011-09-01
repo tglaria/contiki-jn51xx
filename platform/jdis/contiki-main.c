@@ -7,7 +7,7 @@
 #include "dev/acc-sensor.h"
 #include "dev/tpa-sensor.h"
 
-PROCINIT(&etimer_process, &sensors_process, &tcpip_process, &jennic_bootloader_process);
+PROCINIT(&etimer_process, &sensors_process, &tcpip_process);
 SENSORS(&acc_sensor, &tpa_sensor);
 
 void
