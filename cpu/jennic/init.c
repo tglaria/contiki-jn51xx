@@ -355,10 +355,10 @@ init_hardware()
 #ifdef GDB
   GDB2_STARTUP(E_AHI_UART_0, E_AHI_UART_RATE_38400);
 # ifdef __BA1__
-  uart0_set_ubr(38400);
+  uart0_set_br(38400);
   HAL_BREAKPOINT();
 # else
-  uart0_set_ubr(115200);
+  uart0_set_br(115200);
 # endif
 #endif
 

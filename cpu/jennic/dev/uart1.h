@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011
+ * Copyright (c) 2111
  * Telecooperation Office (TecO), Universitaet Karlsruhe (TH), Germany.
  * All rights reserved.
  *
@@ -32,12 +32,12 @@
  * Author(s): Philipp Scholl <scholl@teco.edu>
  */
 
-#ifndef __UART0_H__
-#define __UART0_H__
+#ifndef __UART1_H__
+#define __UART1_H__
 
-void uart0_set_br(unsigned int br);
-void uart0_set_input(int (*input)(unsigned char c));
-void uart0_writeb(unsigned char c);
-void uart0_init(unsigned long br);
+void uart1_set_br(unsigned int br);
+void uart1_set_input(int (*input)(unsigned char c));
+void uart1_writeb(unsigned char c);
+void uart1_init(unsigned long br);
 
 #endif

@@ -1,5 +1,5 @@
 CONTIKI_CPU_DIRS     = . dev net sys
-CONTIKI_SOURCEFILES += clock.c timer-arch.c uart0.c jts.c assert.c i2c.c irq.c sprintf.c watchdog.c init.c slip.c
+CONTIKI_SOURCEFILES += clock.c timer-arch.c uart1.c uart0.c jts.c assert.c i2c.c irq.c sprintf.c watchdog.c init.c slip.c
 
 ### Compiler definitions
 CCPREFIX = ba-elf
