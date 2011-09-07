@@ -121,7 +121,7 @@ void uart1_init(unsigned long br)
   uart1_set_br(br);
   vAHI_UartSetRTSCTS(E_AHI_UART_1, false);
 
-  vAHI_Uart0RegisterCallback(irq);
+  vAHI_Uart1RegisterCallback(irq);
   vAHI_UartSetInterrupt(E_AHI_UART_1, false,  /* modem status         */
                               false,  /* rx line error status */
                               false,  /* tx fifo empty        */
