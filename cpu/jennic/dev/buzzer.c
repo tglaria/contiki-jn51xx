@@ -30,6 +30,8 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * Author(s): Philipp Scholl <scholl@teco.edu>
+ *
+ * Driver for a buzzer found on the landmarke devices.
  */
 
 #include "dev/buzzer.h"
@@ -38,11 +40,22 @@
 #include <stdint.h>
 #include "gdb2.h"
 
-#define POWER_PIN  E_AHI_DIO17_INT
-#define BUZZER_PIN E_AHI_DIO10_INT
-
 #ifndef JENNIC_CONF_BUZZER_TIMER
 # define BUZZER_TIMER E_AHI_TIMER_1
+#else
+# define BUZZER_TIMER JENNIC_CONF_BUZZER_TIMER
+#endif
+
+#ifndef JENNIC_CONF_BUZZER_POWER_PIN
+# define POWER_PIN JENNIC_CONF_BUZZER_POWER_PIN
+#else
+# define POWER_PIN  E_AHI_DIO17_INT
+#endif
+
+#ifndef JENNIC_CONF_BUZZER_PIN
+# define BUZZER_PIN JENNIC_CONF_BUZZER_PIN
+#elif
+# define BUZZER_PIN E_AHI_DIO10_INT
 #endif
 
 static void

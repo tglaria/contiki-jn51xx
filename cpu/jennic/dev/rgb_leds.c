@@ -30,6 +30,8 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * Author(s): Philipp Scholl <scholl@teco.edu>
+ *
+ * Driver for the rgb leds found on the landmarke device.
  */
 
 #include "rgb_leds.h"

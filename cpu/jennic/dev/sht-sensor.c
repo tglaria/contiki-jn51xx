@@ -30,6 +30,8 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * Author(s): Philipp Scholl <scholl@teco.edu>
+ *
+ * Bit-Banging driver for the SHT1x sensors.
  */
 #include "lib/sensors.h"
 #include "dev/sht-sensor.h"
@@ -49,6 +51,18 @@ static uint16 u16ReadMeasurementResult(void);
 static void   vWait(int iWait);
 static void   vWriteStatus(uint8 u8Status);
 
+#ifndef JENNIC_CONF_SHT1x_CLK_PIN
+# define HTS_CLK_DIO_BIT_MASK  JENNIC_CONF_SHT1x_CLK_PIN
+#else
+# define HTS_CLK_DIO_BIT_MASK  (1 << 13)
+#endif
+
+#ifndef JENNIC_CONF_SHT1x_DATA_PIN
+# define HTS_DATA_DIO_BIT_MASK JENNIC_CONF_SHT1x_DATA_PIN
+#else
+# define HTS_DATA_DIO_BIT_MASK (1 << 12)
+#endif
+
 #define vClearClock()         vAHI_DioSetOutput(0, HTS_CLK_DIO_BIT_MASK)
 #define vSetClock()           vAHI_DioSetOutput(HTS_CLK_DIO_BIT_MASK, 0)
 #define vClearData()          vAHI_DioSetOutput(0, HTS_DATA_DIO_BIT_MASK)
@@ -64,8 +78,6 @@ static void   vWriteStatus(uint8 u8Status);
 #define WITH_ACK          (TRUE)
 #define NO_ACK            (FALSE)
 #define HTS_TIMEOUT       (3000000)
-
-
 
 static void
 sequence(void)

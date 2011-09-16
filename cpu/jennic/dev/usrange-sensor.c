@@ -30,6 +30,8 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * Author(s): Philipp Scholl <scholl@teco.edu>
+ *
+ * Driver for the SRF04 ultrasonic range finder.
  */
 #include "lib/sensors.h"
 #include "dev/usrange-sensor.h"
@@ -47,7 +49,6 @@ static uint16_t             _value = 0;
 #define SRF_RES_REG         (0x02)
 #define SRF_REAL_RANGING_CM (0x51)
 #define SRF_FAKE_RANGING_CM (0x57)
-
 
 static u8_t cmd[] = {SRF_CMD_REG, SRF_FAKE_RANGING_CM};
 

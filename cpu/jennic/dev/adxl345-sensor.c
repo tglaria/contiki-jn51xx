@@ -40,7 +40,6 @@
 #include "dev/irq.h"
 #include <contiki-net.h>
 #include <AppHardwareApi.h>
-#include <gdb.h>
 
 /* ------- Register names ------- */
 #define ADXL345_ADDR 0xA6

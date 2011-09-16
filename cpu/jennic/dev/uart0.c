@@ -116,6 +116,7 @@ void uart0_writeb(unsigned char c)
 
 void uart0_init(unsigned long br)
 {
+  vAHI_UartSetRTSCTS(E_AHI_UART_0, false);
   vAHI_UartEnable(E_AHI_UART_0);
 
   vAHI_UartReset(E_AHI_UART_0, true, true);
@@ -130,5 +131,6 @@ void uart0_init(unsigned long br)
                               true,   /* rx data there        */
                               E_AHI_UART_FIFO_LEVEL_1);
 
+  vAHI_UartSetRTSCTS(E_AHI_UART_0, false);
   vAHI_UartReset(E_AHI_UART_0, false, false);
 }

@@ -30,6 +30,8 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * Author(s): Philipp Scholl <scholl@teco.edu>
+ *
+ * This is a driver for general smoke sensors ripped from smoke detectors.
  */
 #include "dev/irq.h"
 #include "dev/smoke-sensor.h"
@@ -40,6 +42,12 @@ const struct sensors_sensor smoke_sensor;
 
 static bool              _active = false;
 static volatile uint16_t _value = 0;
+
+#ifndef JENNIC_CONF_SMOKE_SENSOR_ADCPIN
+# define ADC_SRC IRQ_ADC_SRC1
+#elif
+# define ADC_SRC JENNIC_CONF_SMOKE_SENSOR_ADCPIN
+#endif
 
 /*---------------------------------------------------------------------------*/
 static int
@@ -60,8 +68,8 @@ init(void)
 static void
 activate(void)
 {
-  sensors_add_irq(&smoke_sensor, IRQ_ADC_SRC1);
-  adc_enable(IRQ_ADC_SRC1);
+  sensors_add_irq(&smoke_sensor, ADC_SRC);
+  adc_enable(ADC_SRC);
   _active = true;
 }
 
@@ -69,8 +77,8 @@ activate(void)
 static void
 deactivate(void)
 {
-  sensors_remove_irq(&smoke_sensor, IRQ_ADC_SRC1);
-  adc_disable(IRQ_ADC_SRC1);
+  sensors_remove_irq(&smoke_sensor, ADC_SRC);
+  adc_disable(ADC_SRC);
   _active = false;
 }
 
