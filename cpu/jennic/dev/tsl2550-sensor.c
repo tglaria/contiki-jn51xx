@@ -93,7 +93,7 @@ static const u16_t count[128] = {
 #define IS_VALID (1<<7)
 
 /* shorthand for tsl function */
-#define tsl(r,b,w,m) i2c(TSL_ADDR,r,b,w,m,I2C_REPEATED_START);
+#define tsl(r,b,w,m) i2c(TSL_ADDR,r,b,w,m,I2C_REPEATED_START)
 
 static int
 value(int type)
@@ -104,7 +104,7 @@ value(int type)
 
   switch(type)
   {
-    case TSL_VALUE_VISIBLE:
+    case LIGHT_VALUE_VISIBLE_CENTILUX:
       while (!(ch0 & IS_VALID)) {
         c = TSL_READ_ADC0; tsl(&c, sizeof(c), &ch0, sizeof(ch0));
       }
@@ -126,7 +126,7 @@ value(int type)
       lux = ((count[ch0]-count[ch1]) * ratio[r]) / 256;
       if (lux>max) lux = max;
 
-      return lux;
+      return lux*100;
 #else
       return (ch0<<8)|ch1;
 #endif
@@ -165,14 +165,19 @@ configure(int type, int value)
 
   case SENSORS_ACTIVE:
     c = value ? TSL_PWR_UP : TSL_PWR_DWN;
-    tsl(&c, sizeof(c), NULL, 0);
-    configure(TSL_CONFIGURE_RANGE, operating_mode);
-    return 1;
+    if (!tsl(&c, sizeof(c), NULL, 0))
+    {
+      return false;
+    }
+    else
+    {
+      configure(TSL_CONFIGURE_RANGE, operating_mode);
+      return 1;
+    }
 
   case TSL_CONFIGURE_RANGE:
     operating_mode = TSL_CONFIGURE_RANGE_EXT ? TSL_EXT_RANGE : TSL_STD_RANGE;
-    tsl(&operating_mode, sizeof(operating_mode), NULL, 0);
-    return 1;
+    return tsl(&operating_mode, sizeof(operating_mode), NULL, 0);
   }
 
   return 0;
