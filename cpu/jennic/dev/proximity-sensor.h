@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009
+ * Copyright (c) 2011
  * Telecooperation Office (TecO), Universitaet Karlsruhe (TH), Germany.
  * All rights reserved.
  *
@@ -32,26 +32,14 @@
  * Author(s): Philipp Scholl <scholl@teco.edu>
  */
 
-#ifndef __LIGHTLEVEL_SENSOR_H__
-#define __LIGHTLEVEL_SENSOR_H__
+#ifndef __PROXIMITY_SENSOR_H__
+#define __PROXIMITY_SENSOR_H__
 
 #include "lib/sensors.h"
 
-extern const struct sensors_sensor lightlevel_sensor;
+extern const struct sensors_sensor proximity_sensor;
 
-#define LIGHTLEVEL_SENSOR "light"
-
-#define TSL_CONFIGURE_RANGE      0x00
-#define TSL_CONFIGURE_RANGE_STD  0x00
-#define TSL_CONFIGURE_RANGE_EXT  0x01
-
-/* TSL2550 sensors consists of two channel, one which is sensitive to both
- * visiable and infrared light, and one only for infrared light.
- * TSL_VALUE_VISIBLE will use both channels to remove the infrared part of
- * detected light, CHANNEL0 and CHANNEL1 can be used to read sensors directly.
- */
-#define LIGHT_VALUE_VISIBLE_CENTILUX  0x00 /* in hundreths of lux */
-#define TSL_VALUE_CHANNEL0            0x01
-#define TSL_VALUE_CHANNEL1            0x02
+#define PROXIMITY_SENSOR "irdistance"
+#define PROXIMITY_VALUE    0x00
 
 #endif
