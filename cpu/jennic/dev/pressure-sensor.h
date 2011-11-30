@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010
+ * Copyright (c) 2011
  * Telecooperation Office (TecO), Universitaet Karlsruhe (TH), Germany.
  * All rights reserved.
  *
@@ -31,20 +31,14 @@
  *
  * Author(s): Philipp Scholl <scholl@teco.edu>
  */
-#ifndef __TEMP_SENSOR_H__
-#define __TEMP_SENSOR_H__
+
+#ifndef __PRESSURE_SENSOR_H__
+#define __PRESSURE_SENSOR_H__
 
 #include "lib/sensors.h"
 
-extern const struct sensors_sensor temperature_sensor;
+extern const struct sensors_sensor pressure_sensor;
+#define PRESSURE_SENSOR "pressure"
+#define PRESSURE_VALUE_PASCAL 0x00
 
-#define TEMPERATURE_SENSOR "temperature"
-#define TEMPERATURE_VALUE_MILLICELSIUS 0x00
-
-#define MCP_CONFIGURE_RES 0x02
-#define MCP_RES_9BIT      0x00
-#define MCP_RES_10BIT     0x20
-#define MCP_RES_11BIT     0x40
-#define MCP_RES_12BIT     0x60
-
-#endif /* __INTTEMP_SENSOR_H__ */
+#endif
