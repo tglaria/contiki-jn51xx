@@ -56,6 +56,16 @@
 #define VCNL_PROX_FREQ   0x89
 #define VCNL_PROX_MODU   0x8A
 
+#define MEASURE_AMBIENT   0x10
+#define MEASURE_PROXIMITY 0x08
+#define AMBIENT_DR        0x40
+#define PROXIMITY_DR      0x20
+
+#define VCNL_3M125        0
+#define VCNL_1M5625       1
+#define VCNL_781K25       2
+#define VCNL_390K625      3
+
 static uint8_t rreg(uint8_t r)
 {
   uint8_t c=0;
@@ -137,7 +147,7 @@ pstatus(int type)
   case SENSORS_ACTIVE:
     return (int*) (rreg(VCNL_IR_CURRENT)); // == zero if not
   case SENSORS_READY:
-    return (int*) (rreg(VCNL_CMD_REG) & (1<<5));
+    return (int*) (rreg(VCNL_CMD_REG) & PROXIMITY_DR);
   }
 
   return NULL;
@@ -148,8 +158,8 @@ pvalue(int type)
 {
   switch(type) {
   case PROXIMITY_VALUE:
-    wreg(VCNL_CMD_REG, (1<<4)|(1<<3)); // start a measurement
-    while (!(rreg(VCNL_CMD_REG) & (1<<5)))
+    wreg(VCNL_CMD_REG, MEASURE_PROXIMITY); // start a measurement
+    while (!(rreg(VCNL_CMD_REG)&PROXIMITY_DR))
       ;
     return rreg16(VCNL_PROX_RES);
   }
@@ -167,10 +177,10 @@ pconfigure(int type, int value)
 
     if (value)
     {
-      wreg(VCNL_IR_CURRENT, 20); // 20*10mA = 200mA
-      wreg(VCNL_PROX_FREQ, 2);   // 781kHz
+      wreg(VCNL_IR_CURRENT, 10); // 20*10mA = 200mA
+      wreg(VCNL_PROX_FREQ, VCNL_781K25);   // 781kHz
       /* dead an delay time as documented in Vishay Datasheet pg. 9 */
-      return wreg(VCNL_PROX_MODU, 129);
+      return wreg(VCNL_PROX_MODU, 0x81);
     }
     else
       return wreg(VCNL_IR_CURRENT, 0); // off?!?
