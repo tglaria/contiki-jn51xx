@@ -37,7 +37,8 @@
 #include <stdbool.h>
 
 #define I2C_10KHZ_SLOW_MODE (319)
-#define I2C_400KHZ_FAST_MODE (31)
+#define I2C_100KHZ_SLOW_MODE (31)
+#define I2C_400KHZ_FAST_MODE (7)
 
 void
 i2c_init()

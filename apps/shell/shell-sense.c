@@ -67,7 +67,7 @@ PROCESS_THREAD(shell_sense_list_process, ev, data)
   PROCESS_PAUSE();
 
   for (sensor = sensors_first(); sensor; sensor = sensors_next(sensor))
-    shell_output_str(&sense_list_command, sensor->type, "");
+    shell_output_str(&sense_list_command, sensor->type, "\n");
 
   PROCESS_EXIT();
   PROCESS_END();
@@ -144,7 +144,11 @@ PROCESS_THREAD(shell_sense_process, ev, data)
     which_value = shell_strtolong(data, &next);
   }
 
-  chosen->configure(SENSORS_ACTIVE, 1);
+  if (!chosen->configure(SENSORS_ACTIVE, 1))
+  {
+    shell_output_str(&sense_command, "sense: unable to activate sensor", "");
+    PROCESS_EXIT();
+  }
 
   for (i=0; i<samples || samples==0; i++) {
     char buf[24];
