@@ -409,20 +409,13 @@ PROCESS_THREAD(ieee_process, ev, data)
   PUTS("ieee_process: starting\n");
 
   ieee_init();
+  ieee_serial_init();
 
-  if (data == NULL) { /* no callbacks given, start with default handlers */
-    PT_INIT(&ieee_mlme); ieee_mlmehandler = ieee_mlmept;
-    PT_INIT(&ieee_mcps); ieee_mcpshandler = ieee_mcpspt;
+  PT_INIT(&ieee_mlme); ieee_mlmehandler = ieee_mlmept;
+  PT_INIT(&ieee_mcps); ieee_mcpshandler = ieee_mcpspt;
 
-    /* start the mlme thread by requesting a scan. */
-    req_scan(MAC_MLME_SCAN_TYPE_ACTIVE,0);
-  } else {
-    struct ieee_callbacks *cb = (struct ieee_callbacks*) data;
-
-    ieee_mlmehandler = cb->mlme;
-    ieee_mcpshandler = cb->mcps;
-  }
-
+  /* start the mlme thread by requesting a scan. */
+  req_scan(MAC_MLME_SCAN_TYPE_ACTIVE,0);
 
   PUTS("ieee_process: started\n");
 
