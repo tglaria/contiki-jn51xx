@@ -409,7 +409,7 @@ PROCESS_THREAD(ieee_process, ev, data)
   PUTS("ieee_process: starting\n");
 
   ieee_init();
-  ieee_serial_init();
+  //ieee_serial_init();
 
   PT_INIT(&ieee_mlme); ieee_mlmehandler = ieee_mlmept;
   PT_INIT(&ieee_mcps); ieee_mcpshandler = ieee_mcpspt;

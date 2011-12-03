@@ -187,6 +187,6 @@ int puts(const char *s)
 #undef putchar
 int putchar(int c)
 {
-  GDB2_PUTS(c);
+  GDB2_PUTC(c);
   return 1;
 }

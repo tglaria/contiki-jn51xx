@@ -43,12 +43,14 @@
 
    #define GDB2_STARTUP(uart,div) gdb_startupPatched(uart, div)
    #define GDB2_PUTS(buf)         gdb2_console_output(strlen(buf), buf)
+   #define GDB2_PUTS(c)           gdb2_console_output(1,&c)
    #define HAL_BREAKPOINT()       asm volatile ("l.trap %0 " : :"I"(1))
  #endif
 
  #ifdef __BA2__ /* only printf debugging */
    #define GDB2_STARTUP(uart,div) uart0_init(38400)
-   #define GDB2_PUTS(buf)         do{while(*buf++){ uart0_writeb(*buf);}} while(0)
+   #define GDB2_PUTS(buf)         do{size_t gdbi; for(gdbi=0;gdbi<strlen(buf);gdbi++){uart0_writeb(buf[gdbi]);}} while(0);
+   #define GDB2_PUTC(c)           do{uart0_writeb(buf);} while(0);
    #define HAL_BREAKPOINT()
  #endif
 #else
