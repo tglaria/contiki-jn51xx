@@ -43,7 +43,7 @@
 
    #define GDB2_STARTUP(uart,div) gdb_startupPatched(uart, div)
    #define GDB2_PUTS(buf)         gdb2_console_output(strlen(buf), buf)
-   #define GDB2_PUTS(c)           gdb2_console_output(1,&c)
+   #define GDB2_PUTC(c)           gdb2_console_output(1,&c)
    #define HAL_BREAKPOINT()       asm volatile ("l.trap %0 " : :"I"(1))
  #endif
 
