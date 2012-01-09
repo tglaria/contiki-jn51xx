@@ -130,7 +130,6 @@ sseg_init()
   uint8_t reset[] = { 0xa5, 0x5a };
   struct sseg_cmd init = {.byte  = MODE1,
                          {.mode1 = { .sleep = 1, .sub = 0, .all = 1 }}};
-  i2c_init();
   i2c(0xd6, reset, sizeof(reset), NULL, 0, I2C_REPEATED_START|I2C_END_OF_TRANS);
   i2c(ADDR, (uint8_t*) &init, sizeof(init), NULL, 0, I2C_REPEATED_START|I2C_END_OF_TRANS);
 }

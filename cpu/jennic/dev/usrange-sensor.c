@@ -72,8 +72,6 @@ init(void)
   // XXX: make sure the read interval is not below 100ms for the SRF02
   // ultrasonic ranger, thats the time needed to acquire a new sample
   // and give the signal enough time to fade away.
-  i2c_init();
-
   ctimer_set(&interval, CLOCK_SECOND/10, sequence, NULL);
   ctimer_stop(&interval);
 }

@@ -155,8 +155,6 @@ configure(int type, int value)
 
   switch(type) {
   case SENSORS_HW_INIT:
-    i2c_init();
-
 #ifdef JENNIC_CONF_TSL2550_PWRPIN
     vAHI_DioSetDirection(0x00, JENNIC_CONF_TSL2550_PWRPIN);
     vAHI_DioSetOutput(JENNIC_CONF_TSL2550_PWRPIN, 0x00);

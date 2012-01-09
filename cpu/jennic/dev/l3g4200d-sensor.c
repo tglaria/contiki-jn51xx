@@ -127,7 +127,6 @@ configure(int type, int v)
   switch (type) {
   case SENSORS_HW_INIT:
   case SENSORS_ACTIVE:
-    i2c_init();
     if (v)
     {
       wreg(L3G4200D_CTRL_REG1, 0xCF, 0xFF);     /* power up, 800Hz, cut-off 30, all axes */

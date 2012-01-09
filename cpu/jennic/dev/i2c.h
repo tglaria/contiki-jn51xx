@@ -39,8 +39,6 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
-void i2c_init();
-
 /* execute one i2c transaction,
  * writing n chars from wr and afterwards reading m chars to rd, mode
  * can be used to assert a repeated_start (no stop condition prior to reading)

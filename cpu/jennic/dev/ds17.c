@@ -78,7 +78,6 @@ configure(int type, int value)
     _value = 0;
     {
       uint8_t c[] = { DS17_REG_CONF, 0x00 };
-      i2c_init();
       ((struct conf_reg*) &c[1])->resolution = 0; /* maximum */
       ((struct conf_reg*) &c[1])->oneshot    = 0;
       i2c(DS17_ADDR, c, sizeof(c), NULL, 0, I2C_REPEATED_START|I2C_END_OF_TRANS);

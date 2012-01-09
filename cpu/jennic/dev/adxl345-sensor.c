@@ -149,7 +149,6 @@ configure(int type, int v)
   switch (type) {
   case SENSORS_HW_INIT:
   case SENSORS_ACTIVE:
-    i2c_init();
     return wreg(ADXL345_POWER_CTL, v?(1<<3):0, (1<<3));
 
   case ACC_SENSOR_RATE:

@@ -99,7 +99,6 @@ tconfigure(int type, int value)
   switch(type) {
   case SENSORS_HW_INIT:
   case SENSORS_ACTIVE:
-    i2c_init();
     return wreg(0x00,0x00); // check if there
   }
 
@@ -223,7 +222,6 @@ pconfigure(int type, int value)
   switch(type) {
   case SENSORS_HW_INIT:
   case SENSORS_ACTIVE:
-    i2c_init();
     /* load compensation coeefficients */
     return rregn(MPL_COEFFICIENT,&coeff,sizeof(coeff));
   }

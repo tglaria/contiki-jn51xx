@@ -127,7 +127,6 @@ aconfigure(int type, int v)
   switch (type) {
   case SENSORS_HW_INIT:
   case SENSORS_ACTIVE:
-    i2c_init();
     if (v)
     {
       //awreg(LSM303_CTRL_REG1,0x3f,0xff); /* full rate, 1000Hz, 792Hz cut-off */
@@ -213,7 +212,6 @@ mconfigure(int type, int v)
   switch (type) {
   case SENSORS_HW_INIT:
   case SENSORS_ACTIVE:
-    i2c_init();
     if (v)
     {
       //mwreg(LSM303_CRA_REG_M,0x1c,0xff); /* output rate: 220Hz */

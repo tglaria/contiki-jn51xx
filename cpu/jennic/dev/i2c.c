@@ -40,12 +40,6 @@
 #define I2C_100KHZ_SLOW_MODE (31)
 #define I2C_400KHZ_FAST_MODE (7)
 
-void
-i2c_init()
-{
-  vAHI_SiConfigure(true, false, I2C_400KHZ_FAST_MODE);
-}
-
 static bool
 i2c_wait()
 {
@@ -71,6 +65,9 @@ i2c(u8_t addr, u8_t *wr, size_t n, u8_t *rd, size_t m, u8_t mode)
   size_t i;
   bool repeated_start      = mode & I2C_REPEATED_START,
        end_of_transmission = mode & I2C_END_OF_TRANS;
+
+  /* enable i2c unit */
+  vAHI_SiConfigure(true, false, I2C_400KHZ_FAST_MODE);
 
   if (n) {
     /* send slave address, start condition */
@@ -112,6 +109,9 @@ i2c(u8_t addr, u8_t *wr, size_t n, u8_t *rd, size_t m, u8_t mode)
       *rd = u8AHI_SiReadData8();
     }
   }
+
+  /* disable i2c unit */
+  vAHI_SiConfigure(false, false, I2C_400KHZ_FAST_MODE);
 
   return true;
 }

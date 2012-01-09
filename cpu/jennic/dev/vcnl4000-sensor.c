@@ -124,8 +124,6 @@ lconfigure(int type, int value)
   switch(type) {
   case SENSORS_HW_INIT:
   case SENSORS_ACTIVE:
-    i2c_init();
-
     if (value) /* 32 samples average, continous mode */
     {
       wreg(VCNL_AMB_PAR, 0x0d);
@@ -173,8 +171,6 @@ pconfigure(int type, int value)
   switch(type) {
   case SENSORS_HW_INIT:
   case SENSORS_ACTIVE:
-    i2c_init();
-
     if (value)
     {
       wreg(VCNL_IR_CURRENT, 10); // 20*10mA = 200mA

@@ -75,7 +75,6 @@ configure(int type, int v)
 
   switch (type) {
   case SENSORS_HW_INIT:
-    i2c_init();
     return 1;
   case SENSORS_ACTIVE:
     /* try and read softare revision register to see if device is present. */

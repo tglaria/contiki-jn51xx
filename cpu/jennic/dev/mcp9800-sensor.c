@@ -75,7 +75,6 @@ configure(int type, int value)
 {
   switch(type) {
   case SENSORS_HW_INIT:
-    i2c_init();
     POWER_ON();
     return 1;
 
