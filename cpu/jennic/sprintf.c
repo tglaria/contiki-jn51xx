@@ -167,20 +167,26 @@ int snprintf(char *str, size_t n, const char *fmt, ...)
 
 int printf(const char *fmt, ...)
 {
-  int m;
+  int m,i;
   char str[256];
   __VALIST va;
   va_start(va,fmt);
   m = vsnprintf(str, sizeof(str)-1, fmt, va);
   va_end(va);
   str[m+1] = '\0';
-  GDB2_PUTS(str);
+  for (i=0;i<m;i++)
+    uart0_writeb(str[i]);
   return m;
 }
 
 int puts(const char *s)
 {
-  GDB2_PUTS(s);
+  char c;
+
+  while (c=*s++)
+    uart0_writeb(c);
+  uart0_writeb('\n');
+
   return strlen(s);
 }
 

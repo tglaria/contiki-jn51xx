@@ -84,6 +84,7 @@ PROCESS_THREAD(shell_sense_process, ev, data)
   struct sensors_sensor *sensor;
   char *next = NULL, c;
   static u32_t samples, sample_rate, which_value, i;
+  static clock_time_t starttime;
 
   PROCESS_BEGIN();
 
@@ -150,6 +151,7 @@ PROCESS_THREAD(shell_sense_process, ev, data)
     PROCESS_EXIT();
   }
 
+  starttime = clock_time();
   for (i=0; i<samples || samples==0; i++) {
     char buf[24];
     int value, n;
@@ -162,10 +164,7 @@ PROCESS_THREAD(shell_sense_process, ev, data)
                           ev == shell_event_input);
 
     if (ev==shell_event_input)
-    {
-      chosen->configure(SENSORS_ACTIVE, 0);
-      PROCESS_EXIT();
-    }
+      break;
 
     value = chosen->value(which_value);
     n = snprintf(buf, sizeof(buf), "%d\n", value);
@@ -173,6 +172,16 @@ PROCESS_THREAD(shell_sense_process, ev, data)
   }
 
   chosen->configure(SENSORS_ACTIVE, 0);
+
+  PROCESS_PAUSE();
+
+  { /* print some statistics */
+    char buf[48];
+    int n;
+    n = snprintf(buf, sizeof(buf), "%d samples spanning %d ms\n", i, clock_time()-starttime);
+    shell_output(&sense_command, buf,n,NULL,0);
+  }
+
 
   PROCESS_EXIT();
   PROCESS_END();

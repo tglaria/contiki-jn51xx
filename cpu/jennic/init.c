@@ -35,9 +35,9 @@
 #include "AppHardwareApi.h"
 #include "contiki.h"
 #include "contiki-net.h"
-#include "dev/leds.h"
-#include "dev/i2c.h"
 #include "dev/irq.h"
+#include "dev/i2c.h"
+#include "dev/leds.h"
 #include "jts.h"
 #include "gdb2.h"
 
@@ -93,13 +93,13 @@ panic(char *msg)
 
   leds_init();
 
-  vAHI_UartEnable(E_AHI_UART_0);
-  vAHI_UartReset(E_AHI_UART_0, TRUE, TRUE);
-  vAHI_UartReset(E_AHI_UART_0, FALSE, FALSE);
-  vAHI_UartSetClockDivisor(E_AHI_UART_0, E_AHI_UART_RATE_115200);
-  vAHI_UartSetControl(E_AHI_UART_0, E_AHI_UART_EVEN_PARITY,
-                      E_AHI_UART_PARITY_DISABLE, E_AHI_UART_WORD_LEN_8,
-                      E_AHI_UART_1_STOP_BIT, E_AHI_UART_RTS_LOW);
+  //vAHI_UartEnable(E_AHI_UART_0);
+  //vAHI_UartReset(E_AHI_UART_0, TRUE, TRUE);
+  //vAHI_UartReset(E_AHI_UART_0, FALSE, FALSE);
+  //vAHI_UartSetClockDivisor(E_AHI_UART_0, E_AHI_UART_RATE_115200);
+  //vAHI_UartSetControl(E_AHI_UART_0, E_AHI_UART_EVEN_PARITY,
+  //                    E_AHI_UART_PARITY_DISABLE, E_AHI_UART_WORD_LEN_8,
+  //                    E_AHI_UART_1_STOP_BIT, E_AHI_UART_RTS_LOW);
 
   n = snprintf(buf, sizeof(buf), "%s EPC=0x%x, EEA=0x%x, ESR=0x%x SR=0x%x\n", msg, EPC, EEA, ESR, SR);
 
@@ -110,7 +110,7 @@ panic(char *msg)
   for(;;)
   {
     uint32_t i;
-    uint16_t delay = 1;
+    uint32_t delay = 1;
 
     for (i=0; i<(n+1); i++)
     {
@@ -357,16 +357,16 @@ init_hardware()
 # ifdef __BA1__
   uart0_set_br(38400);
   HAL_BREAKPOINT();
-# else
-  uart0_set_br(115200);
 # endif
+# else
+  uart0_init(38400);
 #endif
 
   UNALIGNED_ACCESS    = UNALIGNED_ACCESS_HANDLER;
 
 #ifdef __BA2__
-  if (bAHI_BrownOutEventResetStatus()) { PRINTF("reset due to brownout\n"); }
-  if (bAHI_WatchdogResetEvent())  { PRINTF("reset due to watchdog\n"); }
+  if (bAHI_BrownOutEventResetStatus()) { printf("reset due to brownout\n"); }
+  if (bAHI_WatchdogResetEvent())  { printf("reset due to watchdog\n"); }
   //misalign_test();
 
   /* just make sure its disabled (its on by default), reenable somewhere else
@@ -376,7 +376,6 @@ init_hardware()
 
   leds_init();
   irq_init();
-  i2c_init();
   clock_init();
   ctimer_init();
 }

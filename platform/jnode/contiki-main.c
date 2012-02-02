@@ -72,11 +72,16 @@ void AppColdStart(void)
   /* default main loop */
   while(1)
   {
-    process_run();
+    int n = process_run();
     etimer_request_poll();
 
 #ifdef __BA2__
     watchdog_periodic();
+    //if (n==0) /* no pending events */
+    {
+      //printf("went to sleep\n");
+      //vAHI_CpuDoze(); //weird problem with tcp and this func
+    }
 #endif
   }
 }

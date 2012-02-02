@@ -338,6 +338,7 @@ ieee_mcpspt(MAC_McpsDcfmInd_s *ev)
 #else
 # include "ieee802_ed.c"
 #endif
+#include "ieee802_serial.c"
 
 static void
 ieee_process_poll(void *p)
@@ -427,8 +428,14 @@ PROCESS_THREAD(ieee_process, ev, data)
 
     for(i=0; i<RX_QUEUE_SIZE && (macev=rxq_peek())!=NULL; i++)
     {
-           if(rxq_peektype()==MLME) ieee_mlmehandler((MAC_MlmeDcfmInd_s*) macev);
-      else if(rxq_peektype()==MCPS) ieee_mcpshandler((MAC_McpsDcfmInd_s*) macev);
+      if(rxq_peektype()==MLME) {
+        //ieee_serial_mlme((MAC_MlmeDcfmInd_s*) macev);
+        ieee_mlmehandler((MAC_MlmeDcfmInd_s*) macev);
+      }
+      else if(rxq_peektype()==MCPS) {
+        //ieee_serial_mcps((MAC_McpsDcfmInd_s*) macev);
+        ieee_mcpshandler((MAC_McpsDcfmInd_s*) macev);
+      }
 
       rxq_dequeue();
     }

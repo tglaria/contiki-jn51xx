@@ -35,7 +35,10 @@
 #ifndef __CPU_JENNIC_INIT_H_
 #define __CPU_JENNIC_INIT_H_
 
-void init_hardware();
+#include "clock.h"
 
-#endif 
+void init_hardware();
+void jn5148_doze(clock_time_t time);
+
+#endif
 

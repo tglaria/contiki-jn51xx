@@ -50,12 +50,13 @@
  #ifdef __BA2__ /* only printf debugging */
    #define GDB2_STARTUP(uart,div) uart0_init(38400)
    #define GDB2_PUTS(buf)         do{size_t gdbi; for(gdbi=0;gdbi<strlen(buf);gdbi++){uart0_writeb(buf[gdbi]);}} while(0);
-   #define GDB2_PUTC(c)           do{uart0_writeb(buf);} while(0);
+   #define GDB2_PUTC(c)           do{uart0_writeb(c);} while(0);
    #define HAL_BREAKPOINT()
  #endif
 #else
  #define GDB2_STARTUP(uart,div)
  #define GDB2_PUTS(buf)
+ #define GDB2_PUTC(c)
  #define HAL_BREAKPOINT()
 #endif
 
