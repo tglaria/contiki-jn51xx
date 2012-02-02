@@ -151,7 +151,7 @@ void uart0_init(unsigned long br)
   vAHI_UartSetInterrupt(E_AHI_UART_0, false,  /* modem status         */
                               false,  /* rx line error status */
                               true,   /* tx fifo empty        */
-                              true,   /* rx data there        */
+                              false,   /* rx data there        */
                               E_AHI_UART_FIFO_LEVEL_1);
 
   vAHI_UartSetRTSCTS(E_AHI_UART_0, false);
