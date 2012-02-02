@@ -52,6 +52,12 @@
 # define UART_AFC_OFFSET  0x2C
 #endif
 
+#define TXBUFSIZE 64
+
+static struct ringbuf txbuf;
+static uint8_t txbuf_data[TXBUFSIZE];
+static volatile uint8_t transmitting;
+
 void
 uart0_set_br(unsigned int br)
 {
@@ -61,8 +67,6 @@ uart0_set_br(unsigned int br)
     uint32 u32Remainder;
     uint32 UART_START_ADR;
 
-    //if(handle==E_AHI_UART_0) UART_START_ADR=UART0_START_ADDR;
-    //if(handle==E_AHI_UART_1) UART_START_ADR=UART1_START_ADDR;
     UART_START_ADR=UART0_START_ADDR;
 
     /* Put UART into clock divisor setting mode */
@@ -97,8 +101,17 @@ static int (*uart0_input)(unsigned char c);
 
 static void irq(unsigned int irqsrc, unsigned int map)
 {
-  while (u8AHI_UartReadLineStatus(E_AHI_UART_0)&E_AHI_UART_LS_DR)
-    uart0_input(u8AHI_UartReadData(E_AHI_UART_0));
+  if (map==E_AHI_UART_INT_RXDATA)
+    //while (u8AHI_UartReadLineStatus(E_AHI_UART_0)&E_AHI_UART_LS_DR)
+      uart0_input(u8AHI_UartReadData(E_AHI_UART_0));
+
+  if (map==E_AHI_UART_INT_TX)
+  {
+    if (ringbuf_elements(&txbuf)==0)
+      transmitting=0;
+    else
+      vAHI_UartWriteData(E_AHI_UART_0, ringbuf_get(&txbuf));
+  }
 }
 
 void uart0_set_input(int (*input)(unsigned char c))
@@ -108,14 +121,24 @@ void uart0_set_input(int (*input)(unsigned char c))
 
 void uart0_writeb(unsigned char c)
 {
-  while(!(u8AHI_UartReadLineStatus(E_AHI_UART_0)&E_AHI_UART_LS_THRE))
-      ; /* wait for transmit buffer to empty */
+  /* push into rinbuf until there is space */
+  while (ringbuf_put(&txbuf,c)==0)
+    ;
 
-  vAHI_UartWriteData(E_AHI_UART_0, c);
+  if (transmitting==0)
+  {
+    transmitting=1;
+    //while (!(u8AHI_UartReadLineStatus(E_AHI_UART_0)&E_AHI_UART_LS_THRE))
+    //  ; /* make sure transmit buffer is empty */
+    vAHI_UartWriteData(E_AHI_UART_0, ringbuf_get(&txbuf));
+  }
 }
 
 void uart0_init(unsigned long br)
 {
+  transmitting = 0;
+  ringbuf_init(&txbuf, txbuf_data, sizeof(txbuf_data));
+
   vAHI_UartSetRTSCTS(E_AHI_UART_0, false);
   vAHI_UartEnable(E_AHI_UART_0);
 
@@ -127,7 +150,7 @@ void uart0_init(unsigned long br)
   vAHI_Uart0RegisterCallback(irq);
   vAHI_UartSetInterrupt(E_AHI_UART_0, false,  /* modem status         */
                               false,  /* rx line error status */
-                              false,  /* tx fifo empty        */
+                              true,   /* tx fifo empty        */
                               true,   /* rx data there        */
                               E_AHI_UART_FIFO_LEVEL_1);
 

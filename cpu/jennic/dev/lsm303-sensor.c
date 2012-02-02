@@ -37,7 +37,6 @@
 #include "dev/i2c.h"
 #include "dev/acc-sensor.h"
 #include "dev/mag-sensor.h"
-#include "dev/irq.h"
 #include <contiki-net.h>
 #include <AppHardwareApi.h>
 
@@ -60,7 +59,7 @@
 #define LSM303_OUT_X_M           0x03
 #define LSM303_OUT_Z_M           0x05
 #define LSM303_OUT_Y_M           0x07
-#define LSM303_SR_REG_Mg         0x09
+#define LSM303_SR_REG_M          0x09
 #define LSM303_IRA_REG_M         0x0A
 #define LSM303_IRB_REG_M         0x0B
 #define LSM303_IRC_REG_M         0x0C
@@ -70,49 +69,43 @@
 #define Y_READ (1<<1)
 #define Z_READ (1<<2)
 
-static bool
-awreg(uint8_t r, uint8_t v)
-{
-  uint8_t buf[] = {r,v};
-  return i2c(LSM303_ADDR_A,buf,sizeof(buf),NULL,0,
-             I2C_REPEATED_START|I2C_END_OF_TRANS);
+static i2c_t acc_transaction;
+static bool acc_active = false;
+
+static void
+acc_startsample(bool status)
+{ /* this callback is *not* called in irq-context */
+  if (acc_active) i2c(&acc_transaction);
+  sensors_changed(&acc_sensor);
 }
+
+/* weird implementation on the accelerometer, all values have to be read at
+ * once to start a new sample!
+ * So resample whenever the same value is read twice!
+ * And set MSB on the register address to enable multiple bytes read. */
+static i2c_t acc_transaction = {
+  .addr  = LSM303_ADDR_A,
+  .cb    = acc_startsample,
+  .wrlen = 1,
+  .rdlen = 6,
+  .buf   = {LSM303_OUT_X_A|(1<<7),0,0,0,0,0,0}
+};
 
 static int
 avalue(int type)
 {
-  /* weird implementation on the accelerometer, all values have to be read at
-   * once to start a new sample!
-   * So resample whenever the same value is read twice!
-   * And set MSB on the register address to enable multiple bytes read. */
-  static uint8_t bitmap = X_READ|Y_READ|Z_READ;
-  static int16_t x,y,z;
-
-  if (bitmap==(X_READ|Y_READ|Z_READ) ||
-      (type==MAG_VALUE_X && (bitmap&X_READ)) ||
-      (type==MAG_VALUE_Y && (bitmap&Y_READ)) ||
-      (type==MAG_VALUE_Z && (bitmap&Z_READ)))
-  {
-    uint8_t buf[6], r=LSM303_OUT_X_A | (1<<7);
-    i2c(LSM303_ADDR_A,&r,1, buf,sizeof(buf),
-        I2C_REPEATED_START|I2C_END_OF_TRANS);
-    x = (int16_t) (buf[1]<<8|buf[0])>>4;
-    y = (int16_t) (buf[3]<<8|buf[2])>>4;
-    z = (int16_t) (buf[5]<<8|buf[4])>>4;
-  }
-
   switch(type) {
   case ACC_VALUE_X:
-    bitmap |= X_READ;
-    return (int16_t) x;
+    return (int16_t) (acc_transaction.buf[2]<<8|
+                      acc_transaction.buf[1])>>4;
 
   case ACC_VALUE_Y:
-    bitmap |= Y_READ;
-    return (int16_t) y;
+    return (int16_t) (acc_transaction.buf[4]<<8|
+                      acc_transaction.buf[3])>>4;
 
   case ACC_VALUE_Z:
-    bitmap = Z_READ;
-    return (int16_t) z;
+    return (int16_t) (acc_transaction.buf[6]<<8|
+                      acc_transaction.buf[5])>>4;
 
   default:
     return 0;
@@ -129,14 +122,19 @@ aconfigure(int type, int v)
   case SENSORS_ACTIVE:
     if (v)
     {
-      //awreg(LSM303_CTRL_REG1,0x3f,0xff); /* full rate, 1000Hz, 792Hz cut-off */
-      //awreg(LSM303_CTRL_REG2,0x10,0xff); /* high-pass enable at 8Hz */
-      //awreg(LSM303_CTRL_REG3,0x00,0xff); /* irq turned off? */
-      //return awreg(LSM303_CTRL_REG4,0xb0,0xff); /* block update disabled for slower reading? */
-      return awreg(LSM303_CTRL_REG1,0x27);
+      if (!I2CW(LSM303_ADDR_A,LSM303_CTRL_REG1,0x3f))
+        return false; /* see if we get an ack */
+      I2CW(LSM303_ADDR_A,LSM303_CTRL_REG4,0x30);
+
+      acc_active = true;
+      acc_startsample(true);
+      return true;
     }
     else
-      return awreg(LSM303_CTRL_REG1,0x00);
+    {
+      acc_active = false;
+      return I2CW(LSM303_ADDR_A,LSM303_CTRL_REG1,0x00);
+    }
   }
 
   return 0;
@@ -145,8 +143,6 @@ aconfigure(int type, int v)
 static int
 astatus(int type)
 {
-  // TODO
-
   switch(type) {
   case SENSORS_ACTIVE:
     return 1;
@@ -157,47 +153,36 @@ astatus(int type)
   return 0;
 }
 
-static bool
-mwreg(uint8_t r, uint8_t v)
-{
-  uint8_t buf[2] = {r,v};
-  return i2c(LSM303_ADDR_M,buf,sizeof(buf),NULL,0,I2C_END_OF_TRANS);
+static i2c_t mag_transaction;
+static bool mag_active = false;
+
+static
+mag_startsample(bool status)
+{ /* this callback is *not* called in irq-context */
+  if (mag_active) i2c(&mag_transaction);
+  sensors_changed(&mag_sensor);
 }
+
+static i2c_t mag_transaction = {
+  .addr  = LSM303_ADDR_M,
+  .cb    = mag_startsample,
+  .wrlen = 1,
+  .rdlen = 6,
+  .buf   = {LSM303_OUT_X_M,0,0,0,0,0,0}
+};
 
 static int
 mvalue(int type)
 {
-  /* weird implementation on the magnetometer, all values have to be read at
-   * once to start a new sample!
-   *
-   * So resample whenever the same value is read twice! */
-  static uint8_t bitmap = X_READ|Y_READ|Z_READ;
-  static uint16_t x,y,z;
-
-  if (bitmap==(X_READ|Y_READ|Z_READ) ||
-      (type==MAG_VALUE_X && (bitmap&X_READ)) ||
-      (type==MAG_VALUE_Y && (bitmap&Y_READ)) ||
-      (type==MAG_VALUE_Z && (bitmap&Z_READ)))
-  {
-    uint16_t buf[3];
-    uint8_t r = LSM303_OUT_X_M;
-    i2c(LSM303_ADDR_M, &r, 1, (uint8_t*) buf, sizeof(buf),
-        I2C_REPEATED_START|I2C_END_OF_TRANS);
-    x = buf[0]; z = buf[1]; y = buf[2];
-  }
-
   switch(type) {
   case MAG_VALUE_X:
-    bitmap |= X_READ;
-    return (int16_t) x;
+    return (int16_t) (mag_transaction.buf[1]|(mag_transaction.buf[2]<<8));
 
   case MAG_VALUE_Y:
-    bitmap |= Y_READ;
-    return (int16_t) y;
+    return (int16_t) (mag_transaction.buf[3]|(mag_transaction.buf[4]<<8));
 
   case MAG_VALUE_Z:
-    bitmap = Z_READ;
-    return (int16_t) z;
+    return (int16_t) (mag_transaction.buf[5]|(mag_transaction.buf[6]<<8));
 
   default:
     return 0;
@@ -214,13 +199,20 @@ mconfigure(int type, int v)
   case SENSORS_ACTIVE:
     if (v)
     {
-      //mwreg(LSM303_CRA_REG_M,0x1c,0xff); /* output rate: 220Hz */
-      //mwreg(LSM303_CRB_REG_M,0xe0,0xff); /* gain +8.1Gauss */
-      //return mwreg(LSM303_MR_REG_M,0x00,0xff);  /* continuous mode */
-      return mwreg(LSM303_MR_REG_M, 0x00);
+      if (!I2CW(LSM303_ADDR_M,LSM303_CRA_REG_M,0x1c))
+        return false; /* output rate: 220Hz */
+      I2CW(LSM303_ADDR_M,LSM303_CRB_REG_M,0xe0);  /* gain +8.1Gauss  */
+      I2CW(LSM303_ADDR_M,LSM303_MR_REG_M,0x00);   /* continuous mode */
+
+      mag_active = true;
+      mag_startsample(true);
+      return true;
     }
     else
-      return mwreg(LSM303_MR_REG_M,0x03);  /* sleep mode */
+    {
+      mag_active = false;
+      return I2CW(LSM303_ADDR_M,LSM303_MR_REG_M,0x03); /* sleep mode */
+    }
     break;
   }
 

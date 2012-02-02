@@ -71,7 +71,7 @@ value(int type)
 static int
 configure(int type, int value)
 {
-  static struct irq_handle handle = { NULL, irq, PIN };
+  static irq_handle_t handle = { .callback=irq, .irqsrc=PIN };
 
   switch(type) {
   case SENSORS_HW_INIT:

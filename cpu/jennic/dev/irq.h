@@ -35,6 +35,8 @@
 #ifndef __JN_IRQ_H__
 #define __JN_IRQ_H__
 
+#include <stdbool.h>
+#include <stdint.h>
 #include "lib/list.h"
 #include "AppHardwareApi.h"
 
@@ -66,7 +68,7 @@ typedef enum {
   IRQ_ADC3  =             0x00800000,
   IRQ_ADC4  =             0x01000000,
   IRQ_ADC_TEMP  =         0x02000000,
-  IRQ_ADC_VOLT  =         0x04000000
+  IRQ_ADC_VOLT  =         0x04000000,
 } __attribute((__packed__)) irq_t;
 
 typedef enum
@@ -80,7 +82,7 @@ struct irq_handle {
   void             (*callback)(irq_t);
   irq_t              irqsrc;
   adc_t              adc_input_range; /* optional */
-};
+} irq_handle_t;
 
 void irq_init();
 void irq_add(const struct irq_handle *);

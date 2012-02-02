@@ -92,25 +92,25 @@ static const u16_t count[128] = {
 
 #define IS_VALID (1<<7)
 
-/* shorthand for tsl function */
-#define tsl(r,b,w,m) i2c(TSL_ADDR,r,b,w,m,I2C_REPEATED_START)
-
 static int
 value(int type)
 {
   static const u16_t max = 1846;
-  u8_t  c, ch0=0x00, ch1=0x00, r;
+  u8_t buf[2] = {0,0};
+  u8_t ch0=0x00, ch1=0x00, r;
   u32_t lux;
 
   switch(type)
   {
     case LIGHT_VALUE_VISIBLE_CENTILUX:
       while (!(ch0 & IS_VALID)) {
-        c = TSL_READ_ADC0; tsl(&c, sizeof(c), &ch0, sizeof(ch0));
+        buf[0] = TSL_READ_ADC0; i2cb(TSL_ADDR,1,1,buf);
+        ch0 = buf[1]
       }
 
       while (!(ch1 & IS_VALID)) {
-        c = TSL_READ_ADC1; tsl(&c, sizeof(c), &ch1, sizeof(ch1));
+        buf[0] = TSL_READ_ADC1; i2cb(TSL_ADDR,1,1,buf);
+        ch1 = buf[1]
       }
 
       /* strip valid bits */
@@ -132,16 +132,16 @@ value(int type)
 #endif
     case TSL_VALUE_CHANNEL0:
       while (!(ch0 & IS_VALID)) {
-        c = TSL_READ_ADC0; tsl(&c, sizeof(c), &ch0, sizeof(ch0));
+        buf[0] = TSL_READ_ADC0; i2cb(TSL_ADDR,1,1,buf);
       }
 
-      return ch0;
+      return buf[1];
     case TSL_VALUE_CHANNEL1:
       while (!(ch1 & IS_VALID)) {
-        c = TSL_READ_ADC1; tsl(&c, sizeof(c), &ch1, sizeof(ch1));
+        buf[0] = TSL_READ_ADC1; i2cb(TSL_ADDR,1,1,buf);
       }
 
-      return ch1;
+      return buf[1];
   }
 
   return 0;
@@ -162,8 +162,7 @@ configure(int type, int value)
     return 1;
 
   case SENSORS_ACTIVE:
-    c = value ? TSL_PWR_UP : TSL_PWR_DWN;
-    if (!tsl(&c, sizeof(c), NULL, 0))
+    if (!I2CW(TSL_ADDR,(c = value ? TSL_PWR_UP : TSL_PWR_DWN)))
     {
       return false;
     }
@@ -174,8 +173,7 @@ configure(int type, int value)
     }
 
   case TSL_CONFIGURE_RANGE:
-    operating_mode = TSL_CONFIGURE_RANGE_EXT ? TSL_EXT_RANGE : TSL_STD_RANGE;
-    return tsl(&operating_mode, sizeof(operating_mode), NULL, 0);
+    return I2CW(TSL_ADDR,(TSL_CONFIGURE_RANGE_EXT ? TSL_EXT_RANGE : TSL_STD_RANGE));
   }
 
   return 0;
@@ -184,21 +182,22 @@ configure(int type, int value)
 static int*
 status(int type)
 {
-  u8_t c, val, res = false;
+  u8_t buf[2] = {0,0};
+  u8_t res = false;
 
   switch(type) {
   case SENSORS_ACTIVE:
-    c = TSL_READ_CMDREG;
-    tsl(&c, sizeof(c), &val, sizeof(val));
-    return (int*) (val&TSL_PWR_UP);
+    buf[0] = TSL_READ_CMDREG;
+    i2cb(TSL_ADDR,1,1,buf);
+    return (int*) (buf[1]&TSL_PWR_UP);
   case SENSORS_READY:
-    c = TSL_READ_ADC0;
-    tsl(&c, sizeof(c), &val, sizeof(val));
-    res = val & (1<<7); // read valid bit
+    buf[0] = TSL_READ_ADC0;
+    i2cb(TSL_ADDR,1,1,buf);
+    res = buf[1] & (1<<7); // read valid bit
 
-    c = TSL_READ_ADC1;
-    tsl(&c, sizeof(c), &val, sizeof(val));
-    res &= val & (1<<7); // read valid bit
+    buf[0] = TSL_READ_ADC1;
+    i2cb(TSL_ADDR,1,1,buf);
+    res &= buf[1] & (1<<7); // read valid bit
 
     return (int*) res;
     break;

@@ -60,9 +60,10 @@ value(int type)
   if (type >= TPA_AMBIENT_TEMPERATURE &&
       type < TPA_AMBIENT_TEMPERATURE + (x*y)+1)
   {
-    uint8_t buf = REG_AMBIENT + (type-TPA_AMBIENT_TEMPERATURE);
-    i2c(ADDR, &buf, 1, &buf, 1, I2C_END_OF_TRANS|I2C_REPEATED_START);
-    return (int) buf;
+    uint8_t buf[] = {REG_AMBIENT + (type-TPA_AMBIENT_TEMPERATURE),0};
+
+    i2cb(ADDR,1,1,&buf);
+    return (int) buf[1];
   }
 
   return 0;
@@ -78,7 +79,7 @@ configure(int type, int v)
     return 1;
   case SENSORS_ACTIVE:
     /* try and read softare revision register to see if device is present. */
-    return i2c(TPA81_ADDRESS, buf, 1, buf, 1, I2C_END_OF_TRANS|I2C_REPEATED_START);
+    return i2cb(TPA81_ADDRESS,1,1,buf);
   }
 
   return 0;

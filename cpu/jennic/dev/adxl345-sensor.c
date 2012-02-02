@@ -34,10 +34,9 @@
  * Driver for ADXL345 Acceleration sensor.
  */
 
-#include "dev/i2c.h"
+#include "dev/utils.h"
 #include "dev/acc-sensor.h"
 #include "dev/hrclock.h"
-#include "dev/irq.h"
 #include <contiki-net.h>
 #include <AppHardwareApi.h>
 
@@ -87,47 +86,45 @@ wreg(uint8_t r, uint8_t v, uint8_t mask)
   uint8_t buf[2] = {r};
 
   /* preserve last register value */
-  if (!i2c(ADXL345_ADDR, &r, 1, buf+1, 1,
-        I2C_END_OF_TRANS|I2C_REPEATED_START))
+  if (!i2cb(ADXL345_ADDR, 1,1,buf))
     return false;
 
   buf[1] &= mask;
   buf[1] |= v;
 
-  return i2c(ADXL345_ADDR, buf, sizeof(buf), NULL, 0, I2C_END_OF_TRANS);
+  return i2cb(ADXL345_ADDR, 2,0,buf);
 }
 
 static int
 value(int type)
 {
-  uint8_t r, buf[2], v;
+  uint8_t buf[3], v;
 
   switch(type) {
   case ACC_VALUE_X:
-    r = ADXL345_DATAX0;
-    i2c(ADXL345_ADDR, &r, 1, buf, sizeof(buf), I2C_REPEATED_START|I2C_END_OF_TRANS);
+    buf[0] =  ADXL345_DATAX0;
+    i2cb(ADXL345_ADDR, 1,2,buf);
     return (int16_t) ((buf[1]<<8)|buf[0]);
 
   case ACC_VALUE_Y:
-    r = ADXL345_DATAY0;
-    i2c(ADXL345_ADDR, &r, 1, buf, sizeof(buf), I2C_REPEATED_START|I2C_END_OF_TRANS);
+    buf[0] = ADXL345_DATAY0;
+    i2cb(ADXL345_ADDR, 1,2,buf);
     return (int16_t) ((buf[1]<<8)|buf[0]);
 
   case ACC_VALUE_Z:
-    r = ADXL345_DATAZ0;
-    i2c(ADXL345_ADDR, &r, 1, buf, sizeof(buf), I2C_REPEATED_START|I2C_END_OF_TRANS);
+    buf[0] = ADXL345_DATAZ0;
+    i2cb(ADXL345_ADDR, 1,2,buf);
     return (int16_t) ((buf[1]<<8)|buf[0]);
 
   case ACC_VALUE_INTSOURCE:
-    r = ADXL345_INT_SOURCE;
-    i2c(ADXL345_ADDR, &r, 1, buf, 1, I2C_REPEATED_START|I2C_END_OF_TRANS);
+    buf[0] = ADXL345_INT_SOURCE;
+    i2cb(ADXL345_ADDR, 1,1,buf);
     return buf[0];
 
   case ACC_VALUE_TAPSTATUS:
-    r = ADXL345_ACT_TAP_STATUS;
-    i2c(ADXL345_ADDR, &r, 1, buf, 1, I2C_REPEATED_START|I2C_END_OF_TRANS);
+    buf[0] = ADXL345_ACT_TAP_STATUS;
+    i2cb(ADXL345_ADDR, 1,1,buf);
     return buf[0];
-
   }
 
   return 0;
@@ -139,7 +136,7 @@ irq(irq_t i)
   sensors_changed(&acc_sensor);
 }
 
-static const struct irq_handle irqh = {NULL, irq, INT0_PIN};
+static const irq_handle_t irqh = {.callback=irq, .irqsrc=INT0_PIN};
 
 static int
 configure(int type, int v)
@@ -192,11 +189,11 @@ configure(int type, int v)
 static int
 status(int type)
 {
-  uint8_t buf[] = {ADXL345_POWER_CTL};
+  uint8_t buf[] = {ADXL345_POWER_CTL,0};
 
   switch(type) {
   case SENSORS_ACTIVE:
-    i2c(ADXL345_ADDR, buf, sizeof(buf), buf, sizeof(buf), I2C_REPEATED_START|I2C_END_OF_TRANS);
+    i2cb(ADXL345_ADDR, 1,1,buf);
     return buf[0] & (1<<3);
   case SENSORS_READY:
     return 1;

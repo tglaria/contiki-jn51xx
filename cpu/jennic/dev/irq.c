@@ -38,7 +38,7 @@
 #include "contiki.h"
 #include "lib/list.h"
 #include "sensors.h"
-#include "irq.h"
+#include "dev/irq.h"
 #include "dev/leds.h"
 #include <AppHardwareApi.h>
 #include "gdb2.h"
@@ -46,6 +46,10 @@
 LIST(irqs);
 
 #define AP_SAMPLE_READY 0x03
+
+#define I2C_10KHZ_SLOW_MODE (319)
+#define I2C_100KHZ_SLOW_MODE (31)
+#define I2C_400KHZ_FAST_MODE (7)
 
 static volatile bool  adc_enabled = false;
 static volatile irq_t current_channel = 0;
@@ -57,14 +61,15 @@ common_handle(u32_t dev, u32_t irqsrc)
 {
   struct irq_handle *item = NULL;
 
+  /* call the callback for the specific irq */
   for (item = list_head(irqs); item; item = item->next)
     if (item->irqsrc & irqsrc || item->irqsrc & current_channel)
       item->callback(item->irqsrc);
 
   if (dev == E_AHI_DEVICE_ANALOGUE)
   {
-    adc_prepare_next();
     u16AHI_AdcRead(); /* make sure the result has been consumed */
+    adc_prepare_next();
   }
 }
 
@@ -123,6 +128,9 @@ to_adcsrc(uint32_t x)
 
 static void
 adc_prepare_next() {
+  /* to make sure all adc sources are handled, we traverse the list of irqs
+   * always from the last activated irq source! (which is what the static 
+   * modifier does here) */
   static struct irq_handle *item = NULL;
   u8_t i;
 

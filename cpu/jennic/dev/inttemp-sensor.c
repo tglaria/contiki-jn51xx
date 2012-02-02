@@ -55,7 +55,8 @@ irq(irq_t s)
 static int
 configure(int type, int value)
 {
-  static struct irq_handle handle = {NULL, irq, IRQ_ADC_TEMP, ADC_INPUT_RANGE_1};
+  static irq_handle_t handle = {.callback=irq, .irqsrc=IRQ_ADC_TEMP, 
+                                .adc_input_range=ADC_INPUT_RANGE_1};
 
   switch(type) {
   case SENSORS_HW_INIT:

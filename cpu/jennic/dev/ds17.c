@@ -63,9 +63,9 @@ struct conf_reg {
 static void
 read(void *ptr)
 {
-  uint8_t c = DS17_REG_TEMP;
-  i2c(DS17_ADDR, &c, sizeof(c), (uint8_t*) &_value, sizeof(_value),
-      I2C_REPEATED_START|I2C_END_OF_TRANS);
+  uint8_t buf[] = {DS17_REG_TEMP,0,0};
+  i2cb(DS17_ADDR,1,2,buf);
+  _value = buf[1]<<8|buf[0];
   sensors_changed(&ds17_sensor);
   ctimer_reset(&interval);
 }
@@ -77,21 +77,16 @@ configure(int type, int value)
   case SENSORS_HW_INIT:
     _value = 0;
     {
-      uint8_t c[] = { DS17_REG_CONF, 0x00 };
-      ((struct conf_reg*) &c[1])->resolution = 0; /* maximum */
-      ((struct conf_reg*) &c[1])->oneshot    = 0;
-      i2c(DS17_ADDR, c, sizeof(c), NULL, 0, I2C_REPEATED_START|I2C_END_OF_TRANS);
+      I2W(DS17_ADDR,DS17_REG_CONF, 0x00);
     }
     return 1;
   case SENSORS_ACTIVE:
     if (value) {
-      uint8_t c[] = { DS17_START };
-      i2c(DS17_ADDR, c, sizeof(c), NULL, 0, I2C_REPEATED_START|I2C_END_OF_TRANS);
+      I2W(DS17_ADDR,DS17_START);
       ctimer_set(&interval, CLOCK_SECOND, read, NULL);
     }
     else {
-      uint8_t c[] = { DS17_STOP };
-      i2c(DS17_ADDR, c, sizeof(c), NULL, 0, I2C_REPEATED_START|I2C_END_OF_TRANS);
+      I2W(DS17_ADDR,DS17_STOP);
       ctimer_stop(&interval);
     }
     return 1;

@@ -130,8 +130,8 @@ sseg_init()
   uint8_t reset[] = { 0xa5, 0x5a };
   struct sseg_cmd init = {.byte  = MODE1,
                          {.mode1 = { .sleep = 1, .sub = 0, .all = 1 }}};
-  i2c(0xd6, reset, sizeof(reset), NULL, 0, I2C_REPEATED_START|I2C_END_OF_TRANS);
-  i2c(ADDR, (uint8_t*) &init, sizeof(init), NULL, 0, I2C_REPEATED_START|I2C_END_OF_TRANS);
+  I2CW(0xd6,0xa5,0x5a); /* reset */
+  I2CW(ADDR,MODE1,(sseg_mode1) {.sleep=1,.sub=0,.all=1});
 }
 
 static void
@@ -283,7 +283,7 @@ set(char c, uint8_t to)
     break;
   }
 
-  i2c(ADDR, (uint8_t*) &cmd, sizeof(cmd), NULL, 0, I2C_REPEATED_START|I2C_END_OF_TRANS);
+  i2cb(ADDR, sizeof(cmd), 0, (uint8_t*) &cmd);
 }
 
 void
@@ -303,7 +303,7 @@ show()
 {
   struct sseg_cmd cmd = { LEDOUT0|AUTO_INC, {{0x0000}} };
   load_digit(sseg1, sseg2, &cmd);
-  i2c(ADDR, (uint8_t*) &cmd, sizeof(cmd), NULL, 0, I2C_REPEATED_START|I2C_END_OF_TRANS);
+  i2cb(ADDR, sizeof(cmd), (uint8_t*) &cmd);
 }
 
 void

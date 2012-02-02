@@ -64,9 +64,12 @@ irq(irq_t s)
 static int
 configure(int type, int value)
 {
-  static struct irq_handle _x = {NULL, irq, IRQ_ADC1, ADC_INPUT_RANGE_2},
-                           _y = {NULL, irq, IRQ_ADC2, ADC_INPUT_RANGE_2},
-                           _z = {NULL, irq, IRQ_ADC3, ADC_INPUT_RANGE_2};
+  static irq_handle_t _x = {.callback=irq, .irqsrc=IRQ_ADC1,
+                            .adc_input_range=ADC_INPUT_RANGE_2},
+                      _y = {.callback=irq, .irqsrc=IRQ_ADC2,
+                            .adc_input_range=ADC_INPUT_RANGE_2},
+                      _z = {.callback=irq, .irqsrc=IRQ_ADC3,
+                            .adc_input_range=ADC_INPUT_RANGE_2};
 
   switch (type) {
   case SENSORS_HW_INIT:

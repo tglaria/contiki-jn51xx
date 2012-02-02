@@ -68,22 +68,14 @@
 
 static uint8_t rreg(uint8_t r)
 {
-  uint8_t c=0;
-  i2c(VCNL_ADDR,&r,1,&c,1,I2C_REPEATED_START|I2C_END_OF_TRANS);
-  return c;
-}
-
-static uint16_t rreg16(uint8_t r)
-{
-  uint16_t c=0;
-  i2c(VCNL_ADDR,&r,1,&c,2,I2C_REPEATED_START|I2C_END_OF_TRANS);
-  return c;
+  uint8_t buf[] = {r,0};
+  i2cb(VCNL_ADDR,1,1,buf);
+  return buf[1];
 }
 
 static bool wreg(uint8_t r, uint8_t c)
 {
-  uint8_t buf[] = {r,c};
-  return i2c(VCNL_ADDR,buf,2,NULL,0,I2C_REPEATED_START|I2C_END_OF_TRANS);
+  return I2CW(VCNL_ADDR,r,c);
 }
 
 static int*
@@ -99,20 +91,81 @@ lstatus(int type)
   return NULL;
 }
 
+static u16_t ambient_light, proximity;
+static u8_t  active = 0;
+
+static struct pt vcnlpt;
+
+static
+PT_THREAD(vcnlptcb(bool status))
+{
+  static i2c_t t = {.cb=vcnlptcb,
+                    .addr=VCNL_ADDR,
+                    .buf={0,0,0} };
+
+  /* 1. start a measurement of ambient light and proximity
+   * 2. wait until measurement is there
+   * 3. read measurement
+   * 4. goto 1 */
+  PT_BEGIN(&vcnlpt);
+
+  while (active)
+  {
+    t.rdlen  = 0;
+    t.wrlen  = 2;
+    t.buf[0] = VCNL_CMD_REG;
+    t.buf[1] = active;
+
+    i2c(&t); PT_YIELD(&vcnlpt);
+
+    t.rdlen  = 1;
+    t.wrlen  = 1;
+    t.buf[0] = VCNL_CMD_REG;
+    do {
+      t.buf[1] = 0;
+      i2c(&t);
+      PT_YIELD(&vcnlpt);
+    } while (!(t.buf[1] & (1<<5)) &&
+             !(t.buf[1] & (1<<6)));
+
+    /* one of the measurments is complete,
+     * store the result and ask for new measurment. */
+    if (t.buf[1] & (1<<6)) /* Ambient light */
+    {
+      t.rdlen  = 2;
+      t.wrlen  = 1;
+      t.buf[0] = VCNL_AMB_RES;
+      i2c(&t);
+      PT_YIELD(&vcnlpt);
+      ambient_light = (t.buf[1]<<8)|t.buf[2];
+      sensors_changed(&lightlevel_sensor);
+    }
+    else if (t.buf[1] & (1<<5))
+    {
+      t.rdlen  = 2;
+      t.wrlen  = 1;
+      t.buf[0] = VCNL_PROX_RES;
+      i2c(&t);
+      PT_YIELD(&vcnlpt);
+      proximity = (t.buf[1]<<8)|t.buf[2];
+      sensors_changed(&proximity_sensor);
+    }
+  }
+
+  PT_END(&vcnlpt);
+}
+
 static int
 lvalue(int type)
 {
   switch(type) {
   case LIGHT_VALUE_VISIBLE_CENTILUX:
-    wreg(VCNL_CMD_REG, ((1<<4)|(1<<3))); // start a measurement
-    while (!(rreg(VCNL_CMD_REG) & (1<<6)))
-      ;
     /* from http://www.vishay.com/docs/83395/vcnl4000_demo_kit.pdf
      *
      * response to different light sources is different average scaling factor
      * is 4 counts per lux to convert counts to LUX and not to loose precision
      * convert it to centi (10**-2) */
-    return rreg16(VCNL_AMB_RES) * 100/4;
+    return ambient_light * 100/4;
   }
 
   return 0;
@@ -126,13 +179,23 @@ lconfigure(int type, int value)
   case SENSORS_ACTIVE:
     if (value) /* 32 samples average, continous mode */
     {
-      wreg(VCNL_AMB_PAR, 0x0d);
-      wreg(VCNL_IR_CURRENT, 2); // 20mA
-      wreg(VCNL_CMD_REG, ((1<<4)|(1<<3))); // start a measurement
-      return 1;
+      if (!wreg(VCNL_AMB_PAR, 0x0d))
+        return false;
+
+      if (active)
+        active |= (1<<4);
+      else {
+        active |= (1<<4);
+        vcnlptcb(true); /* make the first call to start the cycle */
+      }
+
+      return true;
     }
     else
-      return wreg(VCNL_AMB_PAR, 0x0d);
+    {
+      active &= ~(1<<4);
+      return true;
+    }
   }
 
   return 0;
@@ -156,10 +219,7 @@ pvalue(int type)
 {
   switch(type) {
   case PROXIMITY_VALUE:
-    wreg(VCNL_CMD_REG, MEASURE_PROXIMITY); // start a measurement
-    while (!(rreg(VCNL_CMD_REG)&PROXIMITY_DR))
-      ;
-    return rreg16(VCNL_PROX_RES);
+    return proximity;
   }
 
   return 0;
@@ -173,13 +233,32 @@ pconfigure(int type, int value)
   case SENSORS_ACTIVE:
     if (value)
     {
-      wreg(VCNL_IR_CURRENT, 10); // 20*10mA = 200mA
-      wreg(VCNL_PROX_FREQ, VCNL_781K25);   // 781kHz
+      return false; // XXX: deactivated for now, need to fix bugs
+      clock_delay(250); // needed, to make sure device is already awake
+
+      if (!wreg(VCNL_IR_CURRENT, 1)) // x*10mA
+        return false;
+
+      wreg(VCNL_PROX_FREQ, VCNL_390K625);
+
       /* dead an delay time as documented in Vishay Datasheet pg. 9 */
-      return wreg(VCNL_PROX_MODU, 0x81);
+      wreg(VCNL_PROX_MODU, 0x81);
+
+      if (active)
+        active |= (1<<3);
+      else {
+        active |= (1<<3);
+        vcnlptcb(true); /* make the first call to start the cycle */
+      }
+
+      return true;
     }
     else
-      return wreg(VCNL_IR_CURRENT, 0); // off?!?
+    {
+      active &= ~(1<<3);
+      wreg(VCNL_IR_CURRENT, 0); // off?!?
+      return true;
+    }
   }
 
   return 0;

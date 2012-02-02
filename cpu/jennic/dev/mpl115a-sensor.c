@@ -48,22 +48,77 @@
 #define MPL_START_TEMP  0x11
 #define MPL_START_BOTH  0x12
 
-static uint8_t rregn(uint8_t r, uint8_t *p, size_t n)
-{
-  return i2c(MPL_ADDR,&r,1,p,n,I2C_REPEATED_START|I2C_END_OF_TRANS);
-}
+#define TEMPERATURE     0x01
+#define PRESSURE        0x02
 
-static uint16_t rreg16(uint8_t r)
-{
-  uint16_t c=0;
-  i2c(MPL_ADDR,&r,1,&c,2,I2C_REPEATED_START|I2C_END_OF_TRANS);
-  return c;
-}
+static struct {
+  int16_t sia0,sib1,sib2,sic12,sic11,sic22;
+} __attribute((__packed__)) coeff;
 
-static bool wreg(uint8_t r, uint8_t c)
+static struct {
+  int16_t uiPadc,uiTadc;
+} __attribute((__packed__)) p;
+
+static u16_t temperature;
+static u8_t  active = 0x00;
+
+static struct pt mplpt;
+
+static
+PT_THREAD(mplptcb(bool status))
 {
-  uint8_t buf[2] = {r,c};
-  return i2c(MPL_ADDR,&buf,2,NULL,0,I2C_REPEATED_START|I2C_END_OF_TRANS);
+  static struct ctimer timer;
+  static i2c_t t = {.cb=mplptcb,
+                    .addr=MPL_ADDR,
+                    .buf={0,0,0,0,0} };
+
+  /* 1. start a measurement of ambient light and proximity
+   * 2. wait until measurement is there
+   * 3. read measurement
+   * 4. goto 1 */
+  PT_BEGIN(&mplpt);
+
+  /* measurement cycle is at least one ms, we take 5ms here
+   * to not overload the system */
+  ctimer_set(&timer, CLOCK_SECOND/200, mplptcb, NULL);
+  ctimer_stop(&timer);
+
+  while (active)
+  {
+    t.rdlen  = 0;
+    t.wrlen  = 2;
+    if ((active&PRESSURE) && (active&TEMPERATURE))
+      t.buf[0] = MPL_START_BOTH;
+    else if (active&PRESSURE)
+      t.buf[0] = MPL_START_PRESS;
+    else if (active&TEMPERATURE);
+      t.buf[0] = MPL_START_TEMP;
+    t.buf[1]  = 0x01;
+
+    i2c(&t); PT_YIELD(&mplpt);
+    ctimer_restart(&timer); PT_YIELD(&mplpt);
+
+    t.wrlen  = 1;
+    if (active&TEMPERATURE)
+    {
+      t.rdlen  = 2;
+      t.buf[0] = MPL_TEMPERATURE;
+      i2c(&t); PT_YIELD(&mplpt);
+      temperature = (t.buf[1]<<8)|t.buf[2];
+      sensors_changed(&temperature_sensor);
+    }
+    if (active&PRESSURE)
+    {
+      t.rdlen  = 4;
+      t.buf[0] = MPL_PRESSURE;
+      i2c(&t); PT_YIELD(&mplpt);
+      p.uiPadc = (t.buf[1]<<8)|t.buf[2];
+      p.uiTadc = (t.buf[3]<<8)|t.buf[4];
+      sensors_changed(&pressure_sensor);
+    }
+  }
+
+  PT_END(&mplpt);
 }
 
 static int*
@@ -72,7 +127,7 @@ tstatus(int type)
   switch(type) {
   case SENSORS_ACTIVE:
   case SENSORS_READY:
-    return 1; // TODO
+    return active & TEMPERATURE;
   }
 
   return NULL;
@@ -83,11 +138,9 @@ tvalue(int type)
 {
   switch(type) {
   case TEMPERATURE_VALUE_MILLICELSIUS:
-    wreg(MPL_START_TEMP, 0x01);
-    clock_delay(CLOCK_SECOND/333);
     /* original formula with floats:
      *  25 + (rreg16(MPL_TEMPERATURE) - 498)/-5.35 */
-    return 25000 + ((((rreg16(MPL_TEMPERATURE)>>6) - 498)*1000000 / -5350));
+    return 25000 + ((((temperature>>6) - 498)*1000000 / -5350));
   }
 
   return 0;
@@ -99,7 +152,19 @@ tconfigure(int type, int value)
   switch(type) {
   case SENSORS_HW_INIT:
   case SENSORS_ACTIVE:
-    return wreg(0x00,0x00); // check if there
+    if (!active) {
+      /* load compensation coeefficients */
+      u8_t buf[1+sizeof(coeff)] = {MPL_COEFFICIENT};
+      if (!i2cb(MPL_ADDR,1,sizeof(buf),buf))
+        return false;
+      memcpy(&coeff, &buf[1], sizeof(coeff));
+
+      active |= TEMPERATURE;
+      mplptcb(true);
+    } else
+      active |= TEMPERATURE;
+
+    return true;
   }
 
   return 0;
@@ -111,19 +176,11 @@ pstatus(int type)
   switch(type) {
   case SENSORS_ACTIVE:
   case SENSORS_READY:
-    return 1; // TODO
+    return active & PRESSURE;
   }
 
   return NULL;
 }
-
-static struct {
-  int16_t sia0,sib1,sib2,sic12,sic11,sic22;
-} __attribute((__packed__)) coeff;
-
-static struct {
-  int16_t uiPadc,uiTadc;
-} __attribute((__packed__)) p;
 
 static int
 pvalue(int type)
@@ -137,10 +194,6 @@ pvalue(int type)
    */
   switch(type) {
   case PRESSURE_VALUE_PASCAL:
-    wreg(MPL_START_BOTH, 0x01);
-    clock_delay(CLOCK_SECOND/333);
-    rregn(MPL_PRESSURE,&p,sizeof(p));
-
     /* coeefficient 9 equation compensation */
     p.uiPadc = p.uiPadc >> 6;
     p.uiTadc = p.uiTadc >> 6;
@@ -222,8 +275,19 @@ pconfigure(int type, int value)
   switch(type) {
   case SENSORS_HW_INIT:
   case SENSORS_ACTIVE:
-    /* load compensation coeefficients */
-    return rregn(MPL_COEFFICIENT,&coeff,sizeof(coeff));
+    if (!active) {
+      /* load compensation coeefficients */
+      u8_t buf[1+sizeof(coeff)] = {MPL_COEFFICIENT}, i;
+      if (!i2cb(MPL_ADDR,1,sizeof(coeff),buf))
+        return false;
+      memcpy(&coeff, &buf[1], sizeof(coeff));
+
+      active |= PRESSURE;
+      mplptcb(true);
+    } else
+      active |= PRESSURE;
+
+    return true;
   }
 
   return 0;

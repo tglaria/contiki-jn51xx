@@ -56,11 +56,13 @@ static u8_t cmd[] = {SRF_CMD_REG, SRF_FAKE_RANGING_CM};
 static void
 sequence(void *ptr)
 {
-  u8_t c;
+  u8_t buf[3] = {c,0,0};
 
   /* read and prepare next cycle */
-  c=SRF_RES_REG; i2c(SRF_ADDR, &c, sizeof(c), (u8_t*) &_value, sizeof(_value));
-  i2c(SRF_ADDR, cmd, sizeof(cmd), NULL, 0);
+  buf[0]=SRF_RES_REG;
+  i2cb(SRF_ADDR,1,2,buf);
+  _value = (buf[1]<<8)|buf[0];
+  I2CW(SRF_ADDR,cmd);
 
   sensors_changed(&usrange_sensor);
 }
@@ -82,7 +84,7 @@ activate(void)
 {
   _active = true;
 
-  i2c(SRF_ADDR, cmd, sizeof(cmd), NULL, 0);
+  I2CW(SRF_ADDR, cmd);
   ctimer_reset(&interval);
 }
 

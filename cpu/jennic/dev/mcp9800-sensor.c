@@ -54,7 +54,7 @@ static uint16_t res_factor = 1000/2;
 static uint16_t conf       = (CONF_REG<<8);
 
 /* shorthand for i2c function */
-#define mcp(r,n,w,m) i2c(MCP_ADDR, r,n,w,m, I2C_END_OF_TRANS|I2C_REPEATED_START)
+#define mcp(r,n,w,m) i2cb(MCP_ADDR,n,m,w,r)
 
 static int
 value(int type)
