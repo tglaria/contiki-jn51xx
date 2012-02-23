@@ -79,71 +79,6 @@ static void   vWriteStatus(uint8 u8Status);
 #define NO_ACK            (FALSE)
 #define HTS_TIMEOUT       (3000000)
 
-static void
-sequence(void)
-{
-  _value = u16ReadMeasurementResult();
-  sensors_changed(&sht_sensor);
-}
-
-/*---------------------------------------------------------------------------*/
-static void
-init(void)
-{
-  ctimer_set(&interval, CLOCK_SECOND/10, sequence, NULL);
-  ctimer_stop(&interval);
-}
-
-/*---------------------------------------------------------------------------*/
-static void
-activate(void)
-{
-  _active = true;
-
-  i2c(SRF_ADDR, cmd, sizeof(cmd), NULL, 0);
-  ctimer_reset(&interval);
-}
-
-/*---------------------------------------------------------------------------*/
-static void
-deactivate(void)
-{
-  ctimer_stop(&interval);
-  _active = false;
-}
-
-/*---------------------------------------------------------------------------*/
-static int
-active(void)
-{
-  return _active;
-}
-
-/*---------------------------------------------------------------------------*/
-static unsigned int
-value(int type)
-{
-  return _value;
-}
-
-/*---------------------------------------------------------------------------*/
-static int
-configure(int type, void *c)
-{
-  return 0;
-}
-
-/*---------------------------------------------------------------------------*/
-static void *
-status(int type)
-{
-  return NULL;
-}
-
-/*---------------------------------------------------------------------------*/
-SENSORS_SENSOR(usrange_sensor, USRANGE_SENSOR,
-               init, NULL, activate, deactivate, active,
-               value, configure, status);
 
 /****************************************************************************/
 /***        Exported Functions                                            ***/
@@ -524,6 +459,51 @@ static void vWriteStatus(uint8 u8Status)
     vSendByte(u8Status);
 }
 
-/****************************************************************************/
-/***        END OF FILE                                                   ***/
-/
+static bool active = false;
+
+static int
+configure(int type, int v)
+{
+  switch (type) {
+  case SENSORS_HW_INIT:
+  case SENSORS_ACTIVE:
+    vHTSreset();
+    active = true;
+  }
+
+  return 0;
+}
+
+static int
+value(int type)
+{
+  if (!active)
+    configure(SENSORS_HW_INIT, 0);
+
+  switch(type) {
+  case SHT_VALUE_TEMP:
+    vHTSstartReadTemp();
+    return u16ReadMeasurementResult();
+  case SHT_VALUE_HUMIDITY:
+    vHTSstartReadHumidity();
+    return u16ReadMeasurementResult();
+  }
+
+  return 0;
+}
+
+static int
+status(int type)
+{
+  switch(type) {
+  case SENSORS_ACTIVE:
+    return 1;
+  case SENSORS_READY:
+    return 1;
+  }
+
+  return 0;
+}
+
+SENSORS_SENSOR(sht_sensor, SHT_SENSOR, value, configure, status);
+

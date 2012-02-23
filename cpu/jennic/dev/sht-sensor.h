@@ -40,5 +40,7 @@
 extern const struct sensors_sensor sht_sensor;
 
 #define SHT_SENSOR "sht"
+#define SHT_VALUE_TEMP 0x00
+#define SHT_VALUE_HUMIDITY 0x01
 
 #endif

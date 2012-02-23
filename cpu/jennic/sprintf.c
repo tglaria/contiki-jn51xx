@@ -193,6 +193,6 @@ int puts(const char *s)
 #undef putchar
 int putchar(int c)
 {
-  GDB2_PUTC(c);
+  uart0_writeb(c);
   return 1;
 }
