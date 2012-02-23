@@ -38,6 +38,7 @@
 #include <string.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include <clock.h>
 #include "contiki-conf.h"
 
 #ifndef JENNIC_CONF_IEEE802154_RXQ_ITEMS
@@ -95,9 +96,12 @@ rxq_enqueue(void *p, types_t type)
     rxq.types[rxq.tail] = type;
     ind = (MAC_DcfmIndHdr_s*) &rxbuf[rxq.tail];
     rxq.tail = (rxq.tail+1)%RX_QUEUE_SIZE;
+
+#if USE_TS
+    if (type==MCPS_ALLOC)
+      asdataframe(ind).timestamp = clock_hrtime();
+#endif
   }
-//  else
-//    leds_toggle(LEDS_ALL);
 
   return ind;
 }

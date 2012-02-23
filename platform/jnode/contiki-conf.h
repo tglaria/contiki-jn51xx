@@ -85,6 +85,7 @@ typedef unsigned short uip_stats_t;
 #define JENNIC_CONF_IEEE802154_RXQ_ITEMS        15
 #define QUEUEBUF_CONF_NUM                       10
 //#define JENNIC_CONF_JN5148_FASTDATARATE         1
+#define JENNIC_CONF_TIMESYNC                    1 /* enable stuff for timesync */
 
 #endif /* UIP_CONF_IPV6 */
 

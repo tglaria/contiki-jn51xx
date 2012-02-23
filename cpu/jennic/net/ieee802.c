@@ -57,6 +57,27 @@ static void (*lqicb)(const rimeaddr_t*, uint8_t) = NULL;
 #include "string.h"
 #include "gdb2.h"
 
+/* Ieee 802.15.4 mac layer functions */
+#define istimeout(ev)         (ev==NULL)
+#define asscan(ev)            ((ev)->uParam.sDcfmScan)
+#define asassociate(ev)       ((ev)->uParam.sDcfmAssociate)
+#define asinddisassociate(ev) ((ev)->uParam.sIndDisassociate)
+#define asindassociate(ev)    ((ev)->uParam.sIndAssociate)
+
+#define asdataframe(ev)       (((MAC_McpsDcfmInd_s*) ev)->uParam.sIndData.sFrame)
+#define asdataind(ev)         ((ev)->uParam.sDcfmData)
+#define asbeacon(ev)          ((ev)->uParam.sIndBeacon)
+
+#ifndef JENNIC_CONF_TIMESYNC
+# define USE_TS 0
+#else
+# define USE_TS JENNIC_CONF_TIMESYNC
+#endif
+
+#if USE_TS
+hrclock_t current_timestamp = 0;
+#endif
+
 #include "ieee802_queue.c"
 
 PROCESS(ieee_process, "Ieee 802.15.4 mac");
@@ -207,16 +228,6 @@ const struct mac_driver ieee_driver = {
   ieee_channel_check
 };
 
-/* Ieee 802.15.4 mac layer functions */
-#define istimeout(ev)         (ev==NULL)
-#define asscan(ev)            ((ev)->uParam.sDcfmScan)
-#define asassociate(ev)       ((ev)->uParam.sDcfmAssociate)
-#define asinddisassociate(ev) ((ev)->uParam.sIndDisassociate)
-#define asindassociate(ev)    ((ev)->uParam.sIndAssociate)
-
-#define asdataframe(ev)       ((ev)->uParam.sIndData.sFrame)
-#define asdataind(ev)         ((ev)->uParam.sDcfmData)
-#define asbeacon(ev)          ((ev)->uParam.sIndBeacon)
 
 /* main task of the ieee mac layer */
 static void (*beaconrxcb)(MAC_MlmeIndBeacon_s*) = NULL;
@@ -310,7 +321,7 @@ ieee_mcpspt(MAC_McpsDcfmInd_s *ev)
         packetbuf_set_addr(PACKETBUF_ADDR_RECEIVER, &rimeaddr_null);
       }
 
-      /* update lqi stuff */
+      /* update lqi stuff and call lqi callback */
       packetbuf_set_attr(PACKETBUF_ATTR_RSSI, asdataframe(ev).u8LinkQuality);
 
       if (asdataframe(ev).sSrcAddr.u8AddrMode == LONG && lqicb)
@@ -318,6 +329,22 @@ ieee_mcpspt(MAC_McpsDcfmInd_s *ev)
               asdataframe(ev).u8LinkQuality);
       else if (lqicb)
         lqicb(NULL, asdataframe(ev).u8LinkQuality);
+
+#if USE_TS
+      current_timestamp = asdataframe(ev).timestamp;
+#endif
+
+      //{
+      //  static char buf[512];
+      //  uint8_t i;
+      //  uint16_t j;
+      //  printf("delay:%d len:%d data:", (int32_t) (clock_hrtime()-asdataframe(ev).timestamp), asdataframe(ev).u8SduLength);
+      //  for (i=0,j=0; i<asdataframe(ev).u8SduLength; i++)
+      //    j+=snprintf(buf+j,sizeof(buf)-j,"0x%x ",asdataframe(ev).au8Sdu[i]);
+      //  buf[j]='\n';
+
+      //  puts(buf);
+      //}
 
       /* call upper layer */
       NETSTACK_NETWORK.input();
@@ -450,3 +477,7 @@ PROCESS_THREAD(ieee_process, ev, data)
   PROCESS_END();
 }
 
+hrclock_t ieee_get_last_timestamp()
+{
+  return current_timestamp;
+}

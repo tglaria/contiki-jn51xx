@@ -40,6 +40,16 @@
 # include "rime.h"
 # include "ieee_mac_sap.h"
 
+#ifndef JENNIC_CONF_TIMESYNC
+# define USE_TS 0
+#else
+# define USE_TS JENNIC_CONF_TIMESYNC
+#endif
+
+#if USE_TS
+# include "hrclock.h"
+#endif
+
 # ifndef SICSLOWPAN_CONF_PANID
 #  define SICSLOWPAN_PANID 0xBEEF
 # else
@@ -86,5 +96,11 @@ enum ieee_events { IEEE_STARTED, IEEE_STOPPED, IEEE_PAUSE, IEEE_UNPAUSE };
 
 /* get the location of the mac address */
 void *ieee_get_mac();
+
+#if USE_TS
+/* get the timestamp of the last received packet, since the packetbuf_attr
+ * interface only supports 16bit we don't use it for this purpose. */
+hrclock_t ieee_get_last_timestamp();
+#endif
 
 #endif

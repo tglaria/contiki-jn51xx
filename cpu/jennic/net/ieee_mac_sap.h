@@ -116,6 +116,18 @@
 #ifndef _mac_sap_h_
 #define _mac_sap_h_
 
+#include <contiki-conf.h>
+
+#ifndef JENNIC_CONF_TIMESYNC
+# define USE_TS 0
+#else
+# define USE_TS JENNIC_CONF_TIMESYNC
+#endif
+
+#if USE_TS
+# include <hrclock.h>
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -1290,7 +1302,10 @@ typedef struct
     uint8      u8AclEntry;                              /**< Security suite used */
     uint8      u8SduLength;                         /**< Length of payload (MSDU) */
     uint8      au8Sdu[MAC_MAX_DATA_PAYLOAD_LEN];    /**< Payload (MSDU) */
-    uint8      pad[2]; 
+    uint8      pad[2];
+#if USE_TS
+    hrclock_t  timestamp; /** XXX: contiki modification, will be filled in callback */
+#endif
 } __attribute((__packed__)) MAC_RxFrameData_s;
 /**
  * @brief Structure for MCPS-DATA.indication
