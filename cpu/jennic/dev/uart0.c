@@ -97,13 +97,17 @@ uart0_set_br(unsigned int br)
     *pu8Reg   = u8TempLcr & 0x7F;
 }
 
-static int (*uart0_input)(unsigned char c);
+static volatile int (*uart0_input)(unsigned char c);
 
 static void irq(unsigned int irqsrc, unsigned int map)
 {
   if (map==E_AHI_UART_INT_RXDATA)
-    //while (u8AHI_UartReadLineStatus(E_AHI_UART_0)&E_AHI_UART_LS_DR)
+  {
+    if (uart0_input)
       uart0_input(u8AHI_UartReadData(E_AHI_UART_0));
+    else
+      u8AHI_UartReadData(E_AHI_UART_0);
+  }
 
   if (map==E_AHI_UART_INT_TX)
   {
@@ -128,8 +132,6 @@ void uart0_writeb(unsigned char c)
   if (transmitting==0)
   {
     transmitting=1;
-    //while (!(u8AHI_UartReadLineStatus(E_AHI_UART_0)&E_AHI_UART_LS_THRE))
-    //  ; /* make sure transmit buffer is empty */
     vAHI_UartWriteData(E_AHI_UART_0, ringbuf_get(&txbuf));
   }
 }
@@ -151,7 +153,7 @@ void uart0_init(unsigned long br)
   vAHI_UartSetInterrupt(E_AHI_UART_0, false,  /* modem status         */
                               false,  /* rx line error status */
                               true,   /* tx fifo empty        */
-                              false,   /* rx data there        */
+                              true,   /* rx data there        */
                               E_AHI_UART_FIFO_LEVEL_1);
 
   vAHI_UartSetRTSCTS(E_AHI_UART_0, false);
