@@ -80,6 +80,7 @@ hrclock_t
 clock_hrtime()
 {
   static hrclock_t time = 0;
+  if(!ticking) clock_init();
   time += u32AHI_TickTimerRead()/TICKS_TO_USEC;
   vAHI_TickTimerWrite(4);
   return time;
