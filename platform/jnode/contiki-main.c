@@ -62,8 +62,8 @@ void AppColdStart(void)
   /* default startup, and make sure STBY pin of power reg is low,
    * see LTC3553 datasheet */
   init_hardware();
-  vAHI_DioSetDirection(0,E_AHI_DIO4_INT);
-  vAHI_DioSetOutput(0,E_AHI_DIO4_INT);
+  vAHI_DioSetDirection(0,E_AHI_DIO5_INT);
+  vAHI_DioSetOutput(0,E_AHI_DIO5_INT);
 
   /* initialize the sd-card first and wait for power supply to stabilize */
   clock_delay(CLOCK_SECOND/5);

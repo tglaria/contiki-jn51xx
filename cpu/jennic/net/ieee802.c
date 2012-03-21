@@ -477,7 +477,9 @@ PROCESS_THREAD(ieee_process, ev, data)
   PROCESS_END();
 }
 
+#if USE_TS
 hrclock_t ieee_get_last_timestamp()
 {
   return current_timestamp;
 }
+#endif

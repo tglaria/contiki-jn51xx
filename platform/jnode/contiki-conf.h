@@ -87,6 +87,10 @@ typedef unsigned short uip_stats_t;
 //#define JENNIC_CONF_JN5148_FASTDATARATE         1
 #define JENNIC_CONF_TIMESYNC                    1 /* enable stuff for timesync */
 
+/* 0 to 11  - no fixed channel
+ * 11 to 26 - channel fixed to number */
+//#define JENNIC_CONF_COORD_FIXED_CHANNEL         26
+
 #endif /* UIP_CONF_IPV6 */
 
 #define RIMEADDR_CONF_SIZE            8
