@@ -41,7 +41,7 @@
 #include <AppHardwareApi.h>
 
 /* ------- Register names ------- */
-#define LSM303_ADDR_A            0x32
+#define LSM303_ADDR_A            0x30
 #define LSM303_ADDR_M            0x3c
 #define LSM303_CTRL_REG1         0x20
 #define LSM303_CTRL_REG2         0x21
