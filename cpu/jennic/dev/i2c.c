@@ -42,7 +42,7 @@
 #define I2C_100KHZ_SLOW_MODE (31)
 #define I2C_400KHZ_FAST_MODE (7)
 
-#define DEBUG 0
+#define DEBUG 1
 
 LIST(transactions);
 
