@@ -41,9 +41,14 @@ extern const struct sensors_sensor l3g4200d_sensor;
 
 #define GYRO_SENSOR "gyroscope"
 
-#define GYRO_VALUE_X_DGS        0x0 /* in degree per sec */
-#define GYRO_VALUE_Y_DGS        0x1
-#define GYRO_VALUE_Z_DGS        0x2
-#define GYRO_VALUE_TEMP_CELSIUS 0x3 /* in millicelsius */
+#define GYRO_VALUE_X    0x0
+#define GYRO_VALUE_Y    0x1
+#define GYRO_VALUE_Z    0x2
+#define GYRO_VALUE_TEMP 0x3
+
+#define GYRO_SENSOR_RANGE        0x100 /* set the range */
+#define GYRO_VALUE_2000DPS       0x0
+#define GYRO_VALUE_500DPS        0x1
+#define GYRO_VALUE_250DPS        0x2
 
 #endif

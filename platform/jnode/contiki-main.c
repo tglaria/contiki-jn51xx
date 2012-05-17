@@ -14,7 +14,7 @@
 #include "dev/acc-sensor.h"
 #include "AppHardwareApi.h"
 
-PROCINIT(&etimer_process, &tcpip_process, &jennic_bootloader_process);
+PROCINIT(&etimer_process, &tcpip_process, &jennic_bootloader_process, &sensors_process);
 SENSORS(&lightlevel_sensor, &l3g4200d_sensor, &mag_sensor, &acc_sensor, &proximity_sensor, &temperature_sensor, &pressure_sensor);
 
 void

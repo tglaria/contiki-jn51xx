@@ -37,6 +37,7 @@
 #include "dev/i2c.h"
 #include "dev/l3g4200d-sensor.h"
 #include <AppHardwareApi.h>
+#include <math.h>
 
 /* ------- Register names ------- */
 #define L3G4200D_ADDR          0xD0
@@ -89,17 +90,15 @@ static i2c_t gyro_txn = {
 static int
 value(int type)
 {
+  int16_t x=(int16_t) (gyro_txn.buf[2]<<8)|gyro_txn.buf[1],
+          y=(int16_t) (gyro_txn.buf[4]<<8)|gyro_txn.buf[3],
+          z=(int16_t) (gyro_txn.buf[6]<<8)|gyro_txn.buf[5];
+
   switch(type) {
-  case GYRO_VALUE_X_DGS:
-    return (int16_t) (gyro_txn.buf[2]<<8)|gyro_txn.buf[1];
-
-  case GYRO_VALUE_Y_DGS:
-    return (int16_t) (gyro_txn.buf[4]<<8)|gyro_txn.buf[3];
-
-  case GYRO_VALUE_Z_DGS:
-    return (int16_t) (gyro_txn.buf[6]<<8)|gyro_txn.buf[5];
-
-  case GYRO_VALUE_TEMP_CELSIUS:
+  case GYRO_VALUE_X: return x;
+  case GYRO_VALUE_Y: return y;
+  case GYRO_VALUE_Z: return z;
+  case GYRO_VALUE_TEMP:
     return rreg(L3G4200D_OUT_TEMP);
   }
 
@@ -128,6 +127,11 @@ configure(int type, int v)
     }
     else   /* power down, keep config */
       return I2CW(L3G4200D_ADDR,L3G4200D_CTRL_REG1,0x47);
+  case GYRO_SENSOR_RANGE:
+    if (v==GYRO_VALUE_2000DPS)     return I2CW(L3G4200D_ADDR,L3G4200D_CTRL_REG4,0xb0);
+    else if (v==GYRO_VALUE_500DPS) return I2CW(L3G4200D_ADDR,L3G4200D_CTRL_REG4,0x90);
+    else if (v==GYRO_VALUE_250DPS) return I2CW(L3G4200D_ADDR,L3G4200D_CTRL_REG4,0x80);
+    break;
   }
 
   return 0;
