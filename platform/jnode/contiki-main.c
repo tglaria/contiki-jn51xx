@@ -81,9 +81,6 @@ void AppColdStart(void)
     printf("pf_mount() failed\n");
     break;
   }
-  printf("waiting to stabilize ...");
-  clock_delay(CLOCK_SECOND*5);
-  printf(" done\n");
 
   /* start the rest */
   process_init();
