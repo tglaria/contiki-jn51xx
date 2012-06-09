@@ -5,6 +5,7 @@
 #include "jts.h"
 #include "pff.h"
 #include "net/ieee802.h"
+#include "dev/leds.h"
 #include "dev/lightlevel-sensor.h"
 #include "dev/proximity-sensor.h"
 #include "dev/l3g4200d-sensor.h"
@@ -82,6 +83,11 @@ void AppColdStart(void)
     break;
   }
 
+  /* enable watchdog on JN5148, there is none on JN5139 */
+  #ifdef __BA2__
+    watchdog_start();
+  #endif
+
   /* start the rest */
   process_init();
   init_net();
@@ -91,10 +97,7 @@ void AppColdStart(void)
   autostart_start(autostart_processes);
   jts_init();
 
-  /* enable watchdog on JN5148, there is none on JN5139 */
-#ifdef __BA2__
-  watchdog_start();
-#endif
+  leds_on(LEDS_ALL);
 
   /* default main loop */
   while(1)

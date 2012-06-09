@@ -236,7 +236,8 @@ mconfigure(int type, int v)
     {
       if (!I2CW(LSM303_ADDR_M,LSM303_CRA_REG_M,0x1c))
         return false; /* output rate: 220Hz */
-      I2CW(LSM303_ADDR_M,LSM303_CRB_REG_M,0xe0);  /* gain +8.1Gauss  */
+      //I2CW(LSM303_ADDR_M,LSM303_CRB_REG_M,0xe0);  /* gain +8.1Gauss  */
+      I2CW(LSM303_ADDR_M,LSM303_CRB_REG_M,0x20);  /* gain +1.3Gauss  */
       I2CW(LSM303_ADDR_M,LSM303_MR_REG_M,0x00);   /* continuous mode */
 
       mag_active = true;
