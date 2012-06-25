@@ -46,6 +46,5 @@ extern const struct sensors_sensor button_sensor;
 #define BUTTON_5 5
 #define BUTTON_6 6
 #define BUTTON_7 7
-#define BUTTON_ALL 8
 
 #endif /* __BUTTON_SENSOR_H__ */
