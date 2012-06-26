@@ -112,7 +112,7 @@ PT_THREAD(ieee_mlmept(MAC_MlmeDcfmInd_s *ev))
 
   do
   {
-    PUTS("ieee_task: requesting active scan\n");
+    PRINTF("ieee_task: requesting active scan\n");
 
     req_scan(MAC_MLME_SCAN_TYPE_ACTIVE, 4);
     PT_YIELD_UNTIL( &ieee_mlme, ev->u8Type==MAC_MLME_DCFM_SCAN &&
@@ -120,14 +120,14 @@ PT_THREAD(ieee_mlmept(MAC_MlmeDcfmInd_s *ev))
                     (asscan(ev).u8Status==MAC_ENUM_SUCCESS &&
                      asscan(ev).u8ScanType==MAC_MLME_SCAN_TYPE_ACTIVE) ));
 
-    PUTS("ieee_task: got active scan result\n");
+    PRINTF("ieee_task: got active scan result\n");
 
     /* find a pan to join */
     ieee_findpan(ev, (MAC_PanDescr_s**) &data);
   } while(data==NULL);
 
   /* if a pan descriptor was found, post a join request */
-  PUTS("ieee_task: pan found -> trying to associate\n");
+  PRINTF("ieee_task: pan found -> trying to associate\n");
   req_associate(data);
 
   /* we are started now */
@@ -140,19 +140,19 @@ PT_THREAD(ieee_mlmept(MAC_MlmeDcfmInd_s *ev))
     switch(ev->u8Type)
     {
       case MAC_MLME_DCFM_ASSOCIATE:
-        PUTS("ieee_task: associated\n");
+        PRINTF("ieee_task: associated\n");
         associated = true;
         break;
       case MAC_MLME_IND_DISASSOCIATE:
-        PUTS("ieee_task: disasociated\n");
+        PRINTF("ieee_task: disasociated\n");
         associated = false;
         break;
       case MAC_MLME_IND_BEACON_NOTIFY:
-        PUTS("ieee_task: beacon notify\n");
+        PRINTF("ieee_task: beacon notify\n");
         //if(!associated)
         //{
         //  req_associate(&asbeacon(ev).sPANdescriptor);
-        //  PUTS("ieee_task: trying to associate\n");
+        //  PRINTF("ieee_task: trying to associate\n");
         //}
         if(beaconrxcb!=NULL)
         {

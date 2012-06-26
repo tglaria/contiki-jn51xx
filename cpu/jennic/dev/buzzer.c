@@ -74,7 +74,6 @@ buzzer_off()
 {
   vAHI_TimerStop(BUZZER_TIMER);
   vAHI_DioSetOutput(0, BUZZER_PIN);
-  GDB2_PUTS("buzzer: stop\n");
 }
 
 #define TIMER_SECOND 31250

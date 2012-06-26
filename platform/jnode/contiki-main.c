@@ -125,5 +125,5 @@ void AppWarmStart(void)
 
 void uip_log(char *msg)
 {
-  GDB2_PUTS(msg);
+  printf(msg);
 }

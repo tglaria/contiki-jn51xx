@@ -84,7 +84,6 @@ irq_init()
 void
 irq_add(const struct irq_handle *handle)
 {
-  GDB2_PUTS("irq: add\n");
   list_add(irqs, handle);
 
   /* is this is not a adc irq, then adc will be disabled from the irq again */
@@ -94,7 +93,6 @@ irq_add(const struct irq_handle *handle)
 void
 irq_remove(const struct irq_handle *handle)
 {
-  GDB2_PUTS("irq: remove\n");
   list_remove(irqs, handle);
 }
 
@@ -159,6 +157,5 @@ adc_prepare_next() {
   if (i == list_length(irqs))
   {
     adc_enabled = false;
-    GDB2_PUTS("adc: disabled\n");
   }
 }

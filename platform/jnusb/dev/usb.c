@@ -41,7 +41,12 @@
 #include "sys/timer.h"
 #include "leds.h"
 
-#define GDB2_PUTS(x)
+#define DEBUG 0
+#if DEBUG
+# define PRINTF(...) printf(__VA_ARGS__)
+#else
+# define PRINTF(...)
+#endif
 
 /* define the connections for the usb chip */
 #ifndef JENNIC_CONF_USB_IRQPIN
@@ -460,7 +465,7 @@ PROCESS_THREAD(usb_process, ev, data)
     {
       process_post(usbdev.process, usb_event, (void*) EVENT_USB_ENUMERATED);
       wregb(USBIEN, SUSPIE=true);
-      GDB2_PUTS("usb: suspend irq enabled\n");
+      PRINTF("usb: suspend irq enabled\n");
     }
 
     wregb(EPIRQ, SUDAVIRQ=true);
@@ -482,7 +487,7 @@ PROCESS_THREAD(usb_process, ev, data)
   wregb4(USBIEN, URESIE=true, URESDNIE=true, NOVBUSIE=true, SUSPIE=true);
   wregb(USBCTL, CONNECT=true);
 
-  GDB2_PUTS("usb: vbus\n");
+  PRINTF("usb: vbus\n");
 
   /* while not disconnected */
   while(!usb.USBIRQ.NOVBUSIRQ)
@@ -498,7 +503,7 @@ PROCESS_THREAD(usb_process, ev, data)
     /* reenable irqs, since disabled by bus reset */
     wregb(EPIEN, SUDAVIE=true);
 
-    GDB2_PUTS("usb: main loop\n");
+    PRINTF("usb: main loop\n");
 
     /* stay here until VBUS is gone or BUS RESET happened */
     while(!usb.USBIRQ.URESIRQ && !usb.USBIRQ.NOVBUSIRQ)
@@ -508,7 +513,7 @@ PROCESS_THREAD(usb_process, ev, data)
         /* suspended -> power down, clear bus active and suspended irq */
         //wregb(USBCTL, PWRDOWN=true);
         wregb(USBIRQ, SUSPIRQ=true) //, BUSACTIRQ=true);
-        GDB2_PUTS("usb: suspended\n");
+        PRINTF("usb: suspended\n");
 
         PROCESS_YIELD_UNTIL(ev == PROCESS_EVENT_POLL &&
                 (usb.USBIRQ.BUSACTIRQ ||
@@ -518,26 +523,26 @@ PROCESS_THREAD(usb_process, ev, data)
         if (usb.USBIRQ.BUSACTIRQ)
         {
           /* resume normal operation, reset irq state */
-          GDB2_PUTS("usb: wokeup\n");
+          PRINTF("usb: wokeup\n");
           wregb(USBIRQ, BUSACTIRQ=true);
         }
         else
         {
-          GDB2_PUTS("usb: got reset or disconnected while waiting for resume\n");
+          PRINTF("usb: got reset or disconnected while waiting for resume\n");
         }
       }
 
       PROCESS_YIELD_UNTIL(ev==PROCESS_EVENT_POLL);
     }
 
-    if (usb.USBIRQ.URESIRQ)   { GDB2_PUTS("usb: reset\n");   }
-    if (usb.USBIRQ.NOVBUSIRQ) { GDB2_PUTS("usb: no vbus\n"); }
+    if (usb.USBIRQ.URESIRQ)   { PRINTF("usb: reset\n");   }
+    if (usb.USBIRQ.NOVBUSIRQ) { PRINTF("usb: no vbus\n"); }
     process_post(usbdev.process, usb_event, (void*) EVENT_USB_DISCONNECTED);
   }
 
   /* disconnect */
   wregb(USBCTL, CONNECT=false);
-  GDB2_PUTS("usb: disconnect\n");
+  PRINTF("usb: disconnect\n");
 
   PROCESS_EXIT();
   PROCESS_END();

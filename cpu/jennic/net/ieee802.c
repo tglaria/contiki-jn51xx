@@ -47,8 +47,12 @@
 #include "lib/assert.h"
 #include "net/netstack.h"
 
-#define PUTS(x) GDB2_PUTS(x)
-#define PRINTF(...) printf(__VA_ARGS__)
+#define DEBUG 0
+#if DEBUG
+# define PRINTF(...) printf(__VA_ARGS__)
+#else
+# define PRINTF(...)
+#endif
 
 /* also used by auxiliary functions defined in ieee802_aux.c */
 static void (*lqicb)(const rimeaddr_t*, uint8_t) = NULL;
@@ -175,7 +179,6 @@ ieee_send(mac_callback_t cb, void *ptr)
   while (bTACframeInProgress())
     ;
 
-  GDB2_PUTS(".");
   vAppApiMcpsRequest(&req, &cfm);
 
   switch(cfm.u8Status) {
@@ -301,7 +304,6 @@ ieee_mcpspt(MAC_McpsDcfmInd_s *ev)
   switch(ev->u8Type)
   {
     case MAC_MCPS_IND_DATA:
-      GDB2_PUTS(",");
       /* new frame received */
       packetbuf_clear();
       packetbuf_copyfrom(asdataframe(ev).au8Sdu,
@@ -434,7 +436,7 @@ PROCESS_THREAD(ieee_process, ev, data)
   static void (*ieee_mcpshandler)(MAC_McpsDcfmInd_s*);
 
   PROCESS_BEGIN();
-  PUTS("ieee_process: starting\n");
+  PRINTF("ieee_process: starting\n");
 
   ieee_init();
   //ieee_serial_init();
@@ -445,7 +447,7 @@ PROCESS_THREAD(ieee_process, ev, data)
   /* start the mlme thread by requesting a scan. */
   req_scan(MAC_MLME_SCAN_TYPE_ACTIVE,0);
 
-  PUTS("ieee_process: started\n");
+  PRINTF("ieee_process: started\n");
 
   /* run until this process is exiting */
   while(true)
@@ -473,7 +475,7 @@ PROCESS_THREAD(ieee_process, ev, data)
     PROCESS_YIELD();
   }
 
-  PUTS("ieee_process: exiting\n");
+  PRINTF("ieee_process: exiting\n");
   PROCESS_END();
 }
 

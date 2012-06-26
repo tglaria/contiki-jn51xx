@@ -71,7 +71,7 @@ void AppWarmStart(void)
 
 void uip_log(char *msg)
 {
-  GDB2_PUTS(msg);
+  printf(msg);
 }
 
 u8_t leds[] = { LEDS_RED, LEDS_GREEN, LEDS_BLUE, LEDS_INNER, LEDS_OUTER };

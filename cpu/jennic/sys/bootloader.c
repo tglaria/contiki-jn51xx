@@ -134,7 +134,6 @@ appcall(void *p)
     s.write_addr = 0;
     s.write_len  = 0;
     s.msg_len    = 0;
-    GDB2_PUTS(" conn ");
   }
 
   if(uip_closed()   ||
@@ -147,13 +146,11 @@ appcall(void *p)
       vAHI_SwReset(); /* at this point the system RESETS */
 
     s.state = IDLE;
-    GDB2_PUTS(" close\n");
   }
 
   if(uip_acked())
   {
     if (s.state==SENDING) { s.msg_len = 0; s.state = IDLE; };
-    GDB2_PUTS("bootloader: acked\n");
   }
 
   if(uip_newdata())
@@ -165,8 +162,6 @@ appcall(void *p)
 
       if(s.write_addr >= s.write_len)
       {
-        GDB2_PUTS("bootloader: write done\n");
-
         s.write_len = 0;
         s.state     = SENDING;
         smsg->type  = RSP_FLASH_PROG2;
@@ -180,8 +175,6 @@ appcall(void *p)
 
       if(s.msg_len == msg->len)
       {
-        GDB2_PUTS("bootloader: send\n");
-
         s.msg_len = 0;
         s.state   = SENDING;
 
@@ -267,7 +260,6 @@ appcall(void *p)
             break;
 
           case REQ_FLASH_PROG2:
-            GDB2_PUTS("bootloader: flashing started\n");
             s.state      = FLASHING;
             s.write_addr = 0x00000000;
             s.write_len  = msg->asFlashWrite2.len;

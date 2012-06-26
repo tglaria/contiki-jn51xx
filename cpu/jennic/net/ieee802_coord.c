@@ -112,7 +112,7 @@ PT_THREAD(ieee_mlmept(MAC_MlmeDcfmInd_s *ev))
   /* mac management thread */
 {
   PT_BEGIN(&ieee_mlme);
-  PUTS("ieee_task: starting as coord\n");
+  PRINTF("ieee_task: starting as coord\n");
 
 #if (RADIO_CHANNEL==0)
   uint32_t channels = SCAN_ALL_CHANNELS;
@@ -121,7 +121,7 @@ PT_THREAD(ieee_mlmept(MAC_MlmeDcfmInd_s *ev))
   {
     uint8_t i=0;
 
-    PUTS("ieee_task: requesting active scan\n");
+    PRINTF("ieee_task: requesting active scan\n");
     req_scan(MAC_MLME_SCAN_TYPE_ACTIVE, SCAN_DURATION);
 
     PT_YIELD(&ieee_mlme);
@@ -144,14 +144,14 @@ PT_THREAD(ieee_mlmept(MAC_MlmeDcfmInd_s *ev))
 
   do /* energy scan on all unallocated channels */
   {
-    PUTS("ieee_task: requesting energy scan\n");
+    PRINTF("ieee_task: requesting energy scan\n");
     req_scan(MAC_MLME_SCAN_TYPE_ENERGY_DETECT, SCAN_DURATION);
     PT_YIELD(&ieee_mlme);
   } while(ev->u8Type != MAC_MLME_DCFM_SCAN ||
           asscan(ev).u8Status != MAC_ENUM_SUCCESS ||
           asscan(ev).u8ScanType != MAC_MLME_SCAN_TYPE_ENERGY_DETECT);
 
-  PUTS("ieee_task: got energy scan result\n");
+  PRINTF("ieee_task: got energy scan result\n");
   req_start(ieee_findsilentchan(ev, channels), true);
   //PRINTF("ieee_task: started as coord on silent channel %d\n", ieee_findsilentchan(ev));
 #else
@@ -161,7 +161,7 @@ PT_THREAD(ieee_mlmept(MAC_MlmeDcfmInd_s *ev))
 
   /* we are started now */
   process_post(PROCESS_BROADCAST, ieee_event, IEEE_STARTED);
-  PUTS("ieee_task: start broadcast\n");
+  PRINTF("ieee_task: start broadcast\n");
 
   while(1)
   {
@@ -172,13 +172,13 @@ PT_THREAD(ieee_mlmept(MAC_MlmeDcfmInd_s *ev))
       case MAC_MLME_IND_ASSOCIATE:
         while(!rsp_associate(&asindassociate(ev)))
           ;
-        PUTS("ieee_task: new node joined\n");
+        PRINTF("ieee_task: new node joined\n");
         break;
       case MAC_MLME_IND_COMM_STATUS:
-        PUTS("ieee_task: comm status rcvd\n");
+        PRINTF("ieee_task: comm status rcvd\n");
         break;
       case MAC_MLME_IND_BEACON_NOTIFY:
-        //PUTS("ieee_task: beacon notify\n");
+        //PRINTF("ieee_task: beacon notify\n");
         break;
       default:
         HAL_BREAKPOINT();

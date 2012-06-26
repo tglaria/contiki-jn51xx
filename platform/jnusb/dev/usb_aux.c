@@ -34,8 +34,6 @@
 
 #include "gdb2.h"
 
-#define PUTS(s) GDB2_PUTS(s) 
-
 typedef enum
 {
   SR_GET_STATUS = 0x00,
@@ -72,7 +70,7 @@ typedef struct
   };
 } __attribute((__packed__)) setup_t;
 
-#define STALLEP0() do { PUTS("*** stall EP0 ***\n"); wregb2(EPSTALLS, STLEP0IN=true, STLEP0OUT=true); } while(0);
+#define STALLEP0() do { PRINTF("*** stall EP0 ***\n"); wregb2(EPSTALLS, STLEP0IN=true, STLEP0OUT=true); } while(0);
 #define ACK()      do { rregn(FNADDR, NULL, 0, true); } while(0); /* dummy read to set ackstat */
 
 static void
@@ -90,18 +88,18 @@ usb_send_desc(setup_t *sp)
   switch(sp->asdescreq.val)
   {
     case DEVICE_DESCRIPTOR:
-      PUTS("dev_desc\n");
+      PRINTF("dev_desc\n");
       dsc = (usbdescr_t*) usbdev.usbdesc;
       len = dsc->bLength;
       break;
 
     case CONFIGURATION_DESCRIPTOR:
-      PUTS("conf_desc\n");
+      PRINTF("conf_desc\n");
       len = MIN(len, wTotalLength);
       break;
 
     case STRING_DESCRIPTOR:
-      PUTS("str_desc\n");
+      PRINTF("str_desc\n");
       dsc = (usbdescr_t*) &dsc->buf[wTotalLength-sizeof(usbdescr_t)]; /* at the first string now */
       for(i=0; i<sp->asdescreq.idx && dsc->bDescriptorType==STRING_DESCRIPTOR; i++)
           dsc = (usbdescr_t*) &dsc->buf[dsc->bLength-sizeof(usbdescr_t)];
@@ -109,7 +107,7 @@ usb_send_desc(setup_t *sp)
       break;
 
     default:
-      PUTS("unknown setup request\n");
+      PRINTF("unknown setup request\n");
       STALLEP0();
   }
 
@@ -166,34 +164,34 @@ std_req(setup_t *sp)
   switch(sp->req)
   {
     case SR_SET_ADDRESS:
-      PUTS("set_addr\n");
+      PRINTF("set_addr\n");
       rregn(FNADDR, NULL, 0, true);
       break;
     case SR_GET_DESCRIPTOR:
-      PUTS("get_desc: ");
+      PRINTF("get_desc: ");
       usb_send_desc(sp);
       break;
     case SR_SET_FEATURE:
       /* this either sets that RWU is to be enabled or to halt an EP,
        * which is mandatory for bulk and interrupt EPs */
-      PUTS("set_feature\n");
+      PRINTF("set_feature\n");
       break;
     case SR_CLEAR_FEATURE:
       /* clear one of the features which have been set by SET_FEATURE */
-      PUTS("clear_feature\n");
+      PRINTF("clear_feature\n");
       break;
     case SR_GET_STATUS:
-      PUTS("get_status\n");
+      PRINTF("get_status\n");
       get_status(sp);
       break;
     case SR_SET_INTERFACE:
       /* this is used to set alternative interfaces. For example when
        * the CDC device will be put up */
-      PUTS("setif");
+      PRINTF("setif");
       ACK();
       break;
     case SR_GET_INTERFACE:
-      PUTS("getif");
+      PRINTF("getif");
       /* always report the same alternative: 1 */
       {
         uint8_t i = 0x01;
@@ -205,13 +203,13 @@ std_req(setup_t *sp)
       }
       break;
     case SR_SET_CONFIGURATION:
-      PUTS("set_conf\n");
+      PRINTF("set_conf\n");
       usbdev.status.configuration = sp->asconfreq.conf;
       ACK();
       return true;
       break;
     case SR_GET_CONFIGURATION:
-      PUTS("get_conf\n");
+      PRINTF("get_conf\n");
       {
         uint8_t len = sizeof(usbdev.status.configuration);
         reg_t st = {0x00};
@@ -221,7 +219,7 @@ std_req(setup_t *sp)
       }
       break;
     default:
-      PUTS("unknown std_req()");
+      PRINTF("unknown std_req()");
       STALLEP0();
   }
 
@@ -233,12 +231,12 @@ usb_setup(setup_t *sp)
 {
   switch(sp->reqtype.type)
   {
-    case 0x00: PUTS("usb: std_req - "); return std_req(sp); break;
-    case 0x01: PUTS("usb: class_req - "); break;
-    case 0x02: PUTS("usb: vendor_req - "); break;
-    default:   GDB2_PUTS("unknown req - "); STALLEP0();
+    case 0x00: PRINTF("usb: std_req - "); return std_req(sp); break;
+    case 0x01: PRINTF("usb: class_req - "); break;
+    case 0x02: PRINTF("usb: vendor_req - "); break;
+    default:   PRINTF("unknown req - "); STALLEP0();
   }
 
-  GDB2_PUTS(".\n");
+  PRINTF(".\n");
   return false;
 }
