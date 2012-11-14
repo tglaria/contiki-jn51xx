@@ -86,7 +86,7 @@ typedef unsigned short uip_stats_t;
 #define QUEUEBUF_CONF_NUM                       10
 //#define JENNIC_CONF_JN5148_FASTDATARATE         1
 #define JENNIC_CONF_TIMESYNC                    1 /* enable stuff for timesync */
-#define JENNIC_CONF_BUTTON_PIN                  (E_AHI_DIO17_INT)
+#define JENNIC_CONF_BUTTON_PIN                  (E_AHI_DIO3_INT)
 
 /* 0 to 11  - no fixed channel
  * 11 to 26 - channel fixed to number */
