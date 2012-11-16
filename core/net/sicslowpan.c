@@ -1548,7 +1548,7 @@ input(void)
       /*
        * the packet is a fragment that does not belong to the packet
        * being reassembled or the packet is not a fragment.
-       *
+       */
       PRINTFI("sicslowpan input: Dropping 6lowpan packet that is not a fragment of the packet currently being reassembled\n");
       return;
     }

@@ -61,9 +61,7 @@ void AppColdStart(void)
   static FATFS fs;
   static uint8_t i=0;
 
-  /* default startup, and make sure STBY pin of power reg is low,
-   * see LTC3553 datasheet */
-  init_hardware();
+  init_hardware_baud(1000000);
 
   /* initialize the sd-card first and wait for power supply to stabilize */
   clock_delay(CLOCK_SECOND/5);

@@ -345,6 +345,12 @@ misalign_test()
 void
 init_hardware()
 {
+  init_hardware(38400);
+}
+
+void
+init_hardware_baud(uint32_t baudrate)
+{
   u32AHI_Init();
 
 #ifdef __BA2__
@@ -355,11 +361,11 @@ init_hardware()
 #ifdef GDB
   GDB2_STARTUP(E_AHI_UART_0, E_AHI_UART_RATE_38400);
 # ifdef __BA1__
-  uart0_set_br(38400);
+  uart0_set_br(baudrate);
   HAL_BREAKPOINT();
 # endif
 # else
-  uart0_init(38400);
+  uart0_init(baudrate);
 #endif
 
   UNALIGNED_ACCESS    = UNALIGNED_ACCESS_HANDLER;
