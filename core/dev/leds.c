@@ -95,7 +95,7 @@ leds_on(unsigned char ledv)
 {
   unsigned char changed;
   changed = (~leds) & ledv;
-  if (ledv & LEDS_ALL)
+  if (ledv == LEDS_ALL)
     leds = LEDS_ALL;
   else
     leds |= ledv;
@@ -107,7 +107,7 @@ leds_off(unsigned char ledv)
 {
   unsigned char changed;
   changed = leds & ledv;
-  if (ledv & LEDS_ALL)
+  if (ledv == LEDS_ALL)
     leds = 0;
   else
     leds &= ~ledv;
